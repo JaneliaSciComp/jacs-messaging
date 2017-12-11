@@ -1,4 +1,4 @@
-package org.janelia.it.messaging.broker.sharedworkspace;
+package org.janelia.messaging.broker.sharedworkspace;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.CancelCallback;
@@ -7,11 +7,10 @@ import com.rabbitmq.client.Delivery;
 import com.rabbitmq.client.LongString;
 import com.rabbitmq.client.impl.LongStringHelper;
 import org.apache.commons.cli.*;
-import org.janelia.it.messaging.client.ConnectionManager;
-import org.janelia.it.messaging.client.Receiver;
-import org.janelia.it.messaging.client.Sender;
+import org.janelia.messaging.client.ConnectionManager;
+import org.janelia.messaging.client.Receiver;
+import org.janelia.messaging.client.Sender;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
-import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +38,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     final HashMap<Long, String> ownershipRequests = new HashMap<Long,String>();
 
 
-    public NeuronBroker() {
-        domainMgr = new TiledMicroscopeDomainMgr(persistenceServer);
-    }
+    public NeuronBroker() {}
 
 
     public TiledMicroscopeDomainMgr getDomainMgr() {
@@ -75,7 +72,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         CommandLine cmd = null;
 
         try {
-            cmd = parser.parse( options, args);
+            cmd = parser.parse(options, args);
             messageServer = cmd.getOptionValue("ms");
             persistenceServer = cmd.getOptionValue("ps");
             receiveQueue = cmd.getOptionValue("rec");
@@ -85,7 +82,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
             if (messageServer==null || receiveQueue==null || sendQueue==null || persistenceServer==null
                     || username==null || password==null)
                 return help(options);
-
         } catch (ParseException e) {
             System.out.println ("Error trying to parse command-line arguments");
             return help(options);
@@ -111,11 +107,14 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     }
 
     public void startBroker() {
+        domainMgr = new TiledMicroscopeDomainMgr(persistenceServer);
+
         // set up permanent receiver on queue
         ConnectionManager connManager = ConnectionManager.getInstance();
         connManager.configureTarget(messageServer, username, password);
         incomingReceiver = new Receiver();
         incomingReceiver.init(connManager, receiveQueue, false);
+        incomingReceiver.setAutoAck(true);
 
         broadcastRefreshSender = new Sender();
         broadcastRefreshSender.init(connManager, sendQueue, "");
@@ -172,9 +171,12 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         neuronIds.add(neuron.getId().toString());
         msgHeaders.put(HeaderConstants.NEURONIDS, neuronIds);
         msgHeaders.put(HeaderConstants.WORKSPACE, neuron.getWorkspaceId().toString());
-        msgHeaders.put(HeaderConstants.USER, user);
         msgHeaders.put(HeaderConstants.DECISION, new Boolean(approval).toString());
         msgHeaders.put(HeaderConstants.DESCRIPTION, "Ownership approved by Neuron Owner");
+
+        ObjectMapper mapper = new ObjectMapper();
+        msgHeaders.put(HeaderConstants.METADATA, mapper.writeValueAsString(neuron));
+
         log.info("Sending out neuron ownership message for neuron ID: " + neuron.getId()
                 + " with approval " + approval + msgHeaders.keySet());
         broadcastRefreshSender.sendMessage(msgHeaders, new String().getBytes());
