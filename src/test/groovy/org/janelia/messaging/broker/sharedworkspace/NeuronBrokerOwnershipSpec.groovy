@@ -1,14 +1,12 @@
-package org.janelia.it.messaging.broker.sharedworkspace
+package org.janelia.messaging.broker.sharedworkspace
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.Delivery
 import com.rabbitmq.client.impl.LongStringHelper
-import org.janelia.it.messaging.client.Sender
+import org.janelia.messaging.client.Sender
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata
 import spock.lang.Specification
-
-import java.util.logging.Logger
 
 /**
  * Created by schauderd on 12/1/17.

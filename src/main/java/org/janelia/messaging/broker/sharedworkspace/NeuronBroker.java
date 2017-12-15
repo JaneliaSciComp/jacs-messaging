@@ -203,9 +203,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
             Long workspace = Long.parseLong(convertLongString((LongString) msgHeaders.get(HeaderConstants.WORKSPACE)));
             MessageType action =  MessageType.valueOf(convertLongString((LongString) msgHeaders.get(HeaderConstants.TYPE)));
             String metadata = convertLongString((LongString) msgHeaders.get(HeaderConstants.METADATA));
-            // temporary hack until I can merge in model refactor
-            metadata = metadata.replaceAll("org.janelia.it.jacs.model.domain.tiledMicroscope.TmNeuronMetadata",
-                    "org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata");
 
             if (metadata!=null) {
                 ObjectMapper mapper = new ObjectMapper();
@@ -223,6 +220,27 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                             e.printStackTrace();
                         }
                         break;
+                    case NEURON_CREATE:
+                    case NEURON_SAVE_NEURONDATA:
+                        try {
+                            log.info(user + metadataObj.getOwnerKey());
+                            if (!user.equals(metadataObj.getOwnerKey())) {
+                                // probably should fire off rejection message
+                                return;
+                            }
+                            byte[] protoBufStream = message.getBody();
+                            TmNeuronMetadata newMetadataObj = domainMgr.save(metadataObj, protoBufStream, user);
+                            log.info("New Metadata object: {}",newMetadataObj);
+
+                            String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
+                            msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
+
+                            broadcastRefreshSender.sendMessage(msgHeaders, protoBufStream);
+                            log.info("Sending out broadcast refresh for neuron save, ID: }" + newMetadataObj.getId());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
                     case NEURON_SAVE_METADATA:
                         try {
                             // TO DO: depending on performance do a real check against database metadata to confirm user owns neuron
@@ -232,8 +250,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                             }
                             TmNeuronMetadata newMetadataObj = domainMgr.saveMetadata(metadataObj, user);
                             String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
-                            serializedMetadata = serializedMetadata.replaceAll("org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata",
-                                    "org.janelia.it.jacs.model.domain.tiledMicroscope.TmNeuronMetadata" );
                             msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
                             byte[] msgBody = new byte[0];
                             broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
@@ -298,27 +314,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                         }
 
 
-                        break;
-                    case NEURON_SAVE_NEURONDATA:
-                        try {
-                            if (!user.equals(metadataObj.getOwnerKey())) {
-                                // probably should fire off rejection message
-                                return;
-                            }
-                            byte[] protoBufStream = message.getBody();
-                            TmNeuronMetadata newMetadataObj = domainMgr.save(metadataObj, protoBufStream, user);
-                            log.info("New Metadata object: {}",newMetadataObj);
-
-                            String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
-                            serializedMetadata = serializedMetadata.replaceAll("org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata",
-                                    "org.janelia.it.jacs.model.domain.tiledMicroscope.TmNeuronMetadata");
-                            msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
-
-                            broadcastRefreshSender.sendMessage(msgHeaders, protoBufStream);
-                            log.info("Sending out broadcast refresh for neuron save, ID: }" + newMetadataObj.getId());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
                         break;
                 }
             }

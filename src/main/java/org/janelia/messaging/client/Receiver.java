@@ -1,4 +1,4 @@
-package org.janelia.it.messaging.client;
+package org.janelia.messaging.client;
 
 import com.rabbitmq.client.CancelCallback;
 import com.rabbitmq.client.Channel;
@@ -14,6 +14,7 @@ public class Receiver {
     Channel channel;
     ConnectionManager connectionManager;
     String queue;
+    boolean autoAck;
 
     public Receiver() {
 
@@ -50,9 +51,17 @@ public class Receiver {
     }
 
     public void setupReceiver (Object handler) throws Exception {
-        channel.basicConsume(queue,
+        channel.basicConsume(queue, autoAck,
                 (consumerTag, delivery) -> ((DeliverCallback)handler).handle(consumerTag, delivery),
                 (consumerTag) -> ((CancelCallback)handler).handle(consumerTag));
 
+    }
+
+    public boolean isAutoAck() {
+        return autoAck;
+    }
+
+    public void setAutoAck(boolean autoAck) {
+        this.autoAck = autoAck;
     }
 }

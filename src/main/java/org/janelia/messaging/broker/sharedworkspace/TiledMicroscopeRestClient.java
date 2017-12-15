@@ -1,4 +1,4 @@
-package org.janelia.it.messaging.broker.sharedworkspace;
+package org.janelia.messaging.broker.sharedworkspace;
 
 import java.io.IOException;
 import java.io.InputStream;

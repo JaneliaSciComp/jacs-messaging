@@ -1,4 +1,4 @@
-package org.janelia.it.messaging.client;
+package org.janelia.messaging.client;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;

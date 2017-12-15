@@ -1,4 +1,4 @@
-package org.janelia.it.messaging.broker.sharedworkspace;
+package org.janelia.messaging.broker.sharedworkspace;
 
 /**
  * Created by schauderd on 11/14/17.
