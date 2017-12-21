@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
+import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,10 @@ public class TiledMicroscopeDomainMgr {
     
     public TiledMicroscopeDomainMgr(String remoteUrl) {
         client = new TiledMicroscopeRestClient(remoteUrl);
+    }
+
+    public TmSample getSampleByWorkspaceId(Long workspaceId, String subjectKey) throws Exception {
+        return client.getSampleForWorkspace(workspaceId, subjectKey);
     }
 
     public TmNeuronMetadata saveMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {

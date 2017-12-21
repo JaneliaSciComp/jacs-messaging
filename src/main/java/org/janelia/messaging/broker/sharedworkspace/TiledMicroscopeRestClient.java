@@ -8,6 +8,8 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
+import org.janelia.model.domain.tiledMicroscope.TmSample;
+import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,6 +90,32 @@ public class TiledMicroscopeRestClient {
             throw new WebApplicationException(response);
         }
         return response.readEntity(TmNeuronMetadata.class);
+    }
+
+    public TmSample getSampleForWorkspace(Long workspaceId, String subjectKey) throws Exception {
+        log.info("Workspace request on {}", workspaceId);
+        Response response = getMouselightEndpoint("/workspace/{workspaceId}", subjectKey)
+                .resolveTemplate("workspaceId", workspaceId)
+                .request("application/json")
+                .get();
+        if (checkBadResponse(response, "getTmWorkspace")) {
+            throw new WebApplicationException(response);
+        }
+        TmWorkspace workspace = response.readEntity(TmWorkspace.class);
+        log.info("WORKSPASDFASDFASDFASDFADS" + workspace);
+        if (workspace!=null) {
+            log.info("Sample ID request on {}", workspace.getSampleId());
+            response = getMouselightEndpoint("/sample/{sampleId}", subjectKey)
+                    .resolveTemplate("sampleId", workspace.getSampleId())
+                    .request("application/json")
+                    .get();
+            if (checkBadResponse(response, "getTmSample")) {
+                throw new WebApplicationException(response);
+            }
+        } else {
+            return null;
+        }
+        return response.readEntity(TmSample.class);
     }
 
     public TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, InputStream protobufStream,  String subjectKey) throws Exception {

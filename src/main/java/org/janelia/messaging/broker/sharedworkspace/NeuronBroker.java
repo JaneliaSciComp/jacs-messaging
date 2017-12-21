@@ -129,12 +129,14 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
     @Override
     // process failed message handling, redirecting to dead-letter queue
-    public void handle(String consumerTag) throws IOException {
-
+    public void handle(String consumerTag) {
+        log.info("FAILED MESSAGE DELIVERY, {}",consumerTag);
     }
 
     private String convertLongString (LongString data) {
-        return LongStringHelper.asLongString(data.getBytes()).toString();
+        if (data!=null)
+            return LongStringHelper.asLongString(data.getBytes()).toString();
+        return null;
     }
 
     private boolean checkAndUpdateRequestLog(Long neuronId, String user) {
@@ -195,7 +197,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
     @Override
     // process message from clients regarding neurons
-    public void handle(String consumerTag, Delivery message) throws IOException {
+    public void handle(String consumerTag, Delivery message) {
         // grab neurons and double-check owner
         Map<String,Object> msgHeaders = message.getProperties().getHeaders();
         if (msgHeaders!=null) {
@@ -206,119 +208,126 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
             if (metadata!=null) {
                 ObjectMapper mapper = new ObjectMapper();
-                TmNeuronMetadata metadataObj = mapper.readValue(metadata, TmNeuronMetadata.class);
-
-                // make sure user already owns this neuron by retrieving the latest (not sure if needed since performance hit occurs) - maybe cache
-                // parse request
-                switch (action) {
-                    case NEURON_DELETE:
-                        try {
-                            domainMgr.remove(metadataObj, user);
-                            byte[] msgBody = new byte[0];
-                            broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case NEURON_CREATE:
-                    case NEURON_SAVE_NEURONDATA:
-                        try {
-                            log.info(user + metadataObj.getOwnerKey());
-                            if (!user.equals(metadataObj.getOwnerKey())) {
-                                // probably should fire off rejection message
-                                return;
+                try {
+                    TmNeuronMetadata metadataObj = mapper.readValue(metadata, TmNeuronMetadata.class);
+                    // make sure user already owns this neuron by retrieving the latest (not sure if needed since performance hit occurs) - maybe cache
+                    // parse request
+                    switch (action) {
+                        case NEURON_DELETE:
+                            try {
+                                domainMgr.remove(metadataObj, user);
+                                byte[] msgBody = new byte[0];
+                                broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
+                            } catch (Exception e) {
+                                // TO DO: problem creating or saving neuron data, make sure to handle gracefully
+                                e.printStackTrace();
                             }
-                            byte[] protoBufStream = message.getBody();
-                            TmNeuronMetadata newMetadataObj = domainMgr.save(metadataObj, protoBufStream, user);
-                            log.info("New Metadata object: {}",newMetadataObj);
-
-                            String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
-                            msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
-
-                            broadcastRefreshSender.sendMessage(msgHeaders, protoBufStream);
-                            log.info("Sending out broadcast refresh for neuron save, ID: }" + newMetadataObj.getId());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case NEURON_SAVE_METADATA:
-                        try {
-                            // TO DO: depending on performance do a real check against database metadata to confirm user owns neuron
-                            if (!user.equals(metadataObj.getOwnerKey())) {
-                                // probably should fire off rejection message
-                                return;
-                            }
-                            TmNeuronMetadata newMetadataObj = domainMgr.saveMetadata(metadataObj, user);
-                            String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
-                            msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
-                            byte[] msgBody = new byte[0];
-                            broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case NEURON_OWNERSHIP_DECISION:
-                        // process response from neuron owner;
-                        try {
-                            String neuronIds = (String)convertLongString((LongString) msgHeaders.get(HeaderConstants.NEURONIDS));
-                            if (neuronIds!=null) {
-                                List<String> neuronIdList = Arrays.asList(neuronIds.split(","));
-                                List<TmNeuronMetadata> neuronMetadataList = domainMgr.retrieve(neuronIdList, user);
-                                if (neuronMetadataList.size()==1) {
-                                    TmNeuronMetadata neuron = neuronMetadataList.get(0);
-                                    boolean decision = Boolean.parseBoolean(
-                                            convertLongString((LongString) msgHeaders.get(HeaderConstants.DECISION)));
-                                    if (decision) {
-                                        updateOwnership(neuron, user);
-                                        fireApprovalMessage(neuron, user, true);
-                                    } else {
-                                        fireApprovalMessage(neuron, user, false);
-                                    }
-
-                                    // clear out log for future requests
-                                    removeRequestLog(neuron.getId(), user);
+                            break;
+                        case NEURON_CREATE:
+                        case NEURON_SAVE_NEURONDATA:
+                            try {
+                                log.info(user + metadataObj.getOwnerKey());
+                                if (!user.equals(metadataObj.getOwnerKey())) {
+                                    // probably should fire off rejection message
+                                    return;
                                 }
+                                byte[] protoBufStream = message.getBody();
+                                TmNeuronMetadata newMetadataObj = domainMgr.save(metadataObj, protoBufStream, user);
+                                log.info("New Metadata object: {}",newMetadataObj);
+
+                                String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
+                                msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
+
+                                broadcastRefreshSender.sendMessage(msgHeaders, protoBufStream);
+                                log.info("Sending out broadcast refresh for neuron save, ID: }" + newMetadataObj.getId());
+                            } catch (Exception e) {
+                                // TO DO: problem creating or saving neuron data, make sure to handle gracefully
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        break;
-                    case REQUEST_NEURON_OWNERSHIP:
-                        try {
-                            String neuronIds = (String)convertLongString((LongString)msgHeaders.get(HeaderConstants.NEURONIDS));
-                            if (neuronIds!=null) {
-                                List<String> neuronIdList = Arrays.asList(neuronIds.split(","));
-                                List<TmNeuronMetadata> neuronMetadataList = domainMgr.retrieve(neuronIdList, user);
-                                // go through list and check that these aren't owned by somebody else
-                                // if they are make request to that user for ownership of those neurons
+                            break;
+                        case NEURON_SAVE_METADATA:
+                            try {
+                                // TO DO: depending on performance do a real check against database metadata to confirm user owns neuron
+                                if (!user.equals(metadataObj.getOwnerKey())) {
+                                    // probably should fire off rejection message
+                                    return;
+                                }
+                                TmNeuronMetadata newMetadataObj = domainMgr.saveMetadata(metadataObj, user);
+                                String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
+                                msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
+                                byte[] msgBody = new byte[0];
+                                broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case NEURON_OWNERSHIP_DECISION:
+                            // process response from neuron owner;
+                            try {
+                                String neuronIds = (String)convertLongString((LongString) msgHeaders.get(HeaderConstants.NEURONIDS));
                                 if (neuronIds!=null) {
-                                    for (TmNeuronMetadata neuron: neuronMetadataList) {
-                                        if (neuron.getOwnerKey()!=null && neuron.getOwnerKey().equals(SYSTEM_OWNER)) {
-                                            if (checkAndUpdateRequestLog(neuron.getId(), user)) {
-                                                // set ownership to user request, save metadata and fire off approval
-                                                updateOwnership(neuron, user);
-                                                fireApprovalMessage(neuron, user, true);
-                                            } else {
-                                                // existing request is already out there, send rejection
-                                                fireApprovalMessage(neuron, user, false);
-                                            }
+                                    List<String> neuronIdList = Arrays.asList(neuronIds.split(","));
+                                    List<TmNeuronMetadata> neuronMetadataList = domainMgr.retrieve(neuronIdList, user);
+                                    if (neuronMetadataList.size()==1) {
+                                        TmNeuronMetadata neuron = neuronMetadataList.get(0);
+                                        boolean decision = Boolean.parseBoolean(
+                                                convertLongString((LongString) msgHeaders.get(HeaderConstants.DECISION)));
+                                        if (decision) {
+                                            updateOwnership(neuron, user);
+                                            fireApprovalMessage(neuron, user, true);
                                         } else {
-                                            // make request to user who owns neurons for neuron ownership
-                                            fireOwnershipRequestMessage(neuron, user);
+                                            fireApprovalMessage(neuron, user, false);
+                                        }
+
+                                        // clear out log for future requests
+                                        removeRequestLog(neuron.getId(), user);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        case REQUEST_NEURON_OWNERSHIP:
+                            try {
+                                String neuronIds = (String)convertLongString((LongString)msgHeaders.get(HeaderConstants.NEURONIDS));
+                                if (neuronIds!=null) {
+                                    List<String> neuronIdList = Arrays.asList(neuronIds.split(","));
+                                    List<TmNeuronMetadata> neuronMetadataList = domainMgr.retrieve(neuronIdList, user);
+                                    // go through list and check that these aren't owned by somebody else
+                                    // if they are make request to that user for ownership of those neurons
+                                    if (neuronIds!=null) {
+                                        for (TmNeuronMetadata neuron: neuronMetadataList) {
+                                            if (neuron.getOwnerKey()!=null && neuron.getOwnerKey().equals(SYSTEM_OWNER)) {
+                                                if (checkAndUpdateRequestLog(neuron.getId(), user)) {
+                                                    // set ownership to user request, save metadata and fire off approval
+                                                    updateOwnership(neuron, user);
+                                                    fireApprovalMessage(neuron, user, true);
+                                                } else {
+                                                    // existing request is already out there, send rejection
+                                                    fireApprovalMessage(neuron, user, false);
+                                                }
+                                            } else {
+                                                // make request to user who owns neurons for neuron ownership
+                                                fireOwnershipRequestMessage(neuron, user);
+                                            }
                                         }
                                     }
                                 }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
 
 
-                        break;
+                            break;
+                    }
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
 
-
         }
+
     }
 }
