@@ -226,7 +226,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                         case NEURON_CREATE:
                         case NEURON_SAVE_NEURONDATA:
                             try {
-                                log.info(user + metadataObj.getOwnerKey());
                                 if (!user.equals(metadataObj.getOwnerKey())) {
                                     // probably should fire off rejection message
                                     return;

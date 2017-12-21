@@ -102,7 +102,6 @@ public class TiledMicroscopeRestClient {
             throw new WebApplicationException(response);
         }
         TmWorkspace workspace = response.readEntity(TmWorkspace.class);
-        log.info("WORKSPASDFASDFASDFASDFADS" + workspace);
         if (workspace!=null) {
             log.info("Sample ID request on {}", workspace.getSampleId());
             response = getMouselightEndpoint("/sample/{sampleId}", subjectKey)

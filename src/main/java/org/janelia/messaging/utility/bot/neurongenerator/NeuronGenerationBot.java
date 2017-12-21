@@ -56,6 +56,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
     Long workspaceId;
     int numPoints;
     static BoundingBox3d boundingBox;
+    double[] scale;
     IdSource idSource;
     static Sender neuronMessager;
     static Receiver neuronConfirm;
@@ -140,7 +141,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
 
     private int[] calculateVolumeSize(TmSample sample) throws Exception {
         File topFolderParam = new File(sample.getFilepath().replaceAll("nrs","Volumes"));
-        int octreeDepth = (int)sample.getNumImageryLevels().longValue() - 1;
+        int octreeDepth = (int)sample.getNumImageryLevels().longValue();
         int zoomFactor = (int) Math.pow(2, octreeDepth - 1);
 
         // Deduce other parameters from first image file contents
@@ -158,54 +159,56 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
 
         // Full volume could be much larger than this downsampled tile
         int[] volumeSize = new int[3];
-        volumeSize[2] = zoomFactor * sz * 2;
+        volumeSize[2] = zoomFactor * sz;
         volumeSize[0] = zoomFactor * sx;
         volumeSize[1] = zoomFactor * sy;
         return volumeSize;
     }
 
-    private BoundingBox3d calcBoundingBox(Long workspaceId) throws Exception {
+    private void calcBoundingBox(Long workspaceId) throws Exception {
         // fetch the sample and extract the origin and scale attributes
         TiledMicroscopeDomainMgr domainMgr = new TiledMicroscopeDomainMgr(persistenceServer);
         TmSample sample = domainMgr.getSampleByWorkspaceId(workspaceId, mluser);
 
         // if no origin or scale attributes, stop (old sample)
         if (sample==null || sample.getOrigin()==null || sample.getScaling()==null)
-            return null;
+            return;
 
         // calculate volumeSize
         int[] volumeSize = calculateVolumeSize(sample);
-log.info("volume size is + {}",volumeSize);
+        log.info("volume size is + {}", volumeSize);
         // get origin and scale from Sample
         int[] origin = new int[3];
         for (int i=0; i<3; i++) {
             origin[i] = sample.getOrigin().get(i);
         }
-        double[] scale = new double[3];
+        scale = new double[3];
         for (int i=0; i<3; i++) {
             scale[i] = sample.getScaling().get(i);
         }
+
+        double divisor = Math.pow(2.0, sample.getNumImageryLevels().intValue() - 1);
+        for (int i = 0; i < scale.length; i++) {
+            scale[ i] /= divisor; // nanometers to micrometers
+        }
+
         for (int i = 0; i < scale.length; i++) {
             scale[ i] /= 1000; // nanometers to micrometers
         }
         for (int i = 0; i < origin.length; i++) {
             origin[ i] = (int) (origin[i] / (1000 * scale[i])); // nanometers to voxels
         }
-
-
         log.info("origin is + {}", origin);
         log.info("scale is + {}", scale);
+
         // calculate bounding box using scale, origin, and volume
-        Vec3 b0 = new Vec3(scale[0] * origin[0], scale[1] * origin[1], scale[2] * origin[2]);
-        Vec3 b1 = new Vec3(scale[0] * origin[0]+volumeSize[0],
-                scale[1] * origin[1]+volumeSize[1],
-                scale[2] * origin[2]+volumeSize[2]);
-        BoundingBox3d result = new BoundingBox3d();
-        result.setMin(b0);
-        result.setMax(b1);
+        Vec3 b0 = new Vec3(0,0,0);
+        Vec3 b1 = new Vec3(volumeSize[0], volumeSize[1], volumeSize[2]);
+        boundingBox = new BoundingBox3d();
+        boundingBox.setMin(b0);
+        boundingBox.setMax(b1);
 
         log.info("Bounding box is {} - {}", b0, b1);
-        return result;
     }
 
     public void generateArtificialNeuronData() throws Exception {
@@ -268,8 +271,8 @@ log.info("volume size is + {}",volumeSize);
 
                     neuronCreated = true;
                     // we have the right neuron and it's been created properly
-                    boundingBox = calcBoundingBox(neuron.getWorkspaceId());
-                    startNeuronGeneration(boundingBox, neuron);
+                    calcBoundingBox(neuron.getWorkspaceId());
+                    startNeuronGeneration(neuron);
                     System.exit(0);
                 }
             }
@@ -278,14 +281,14 @@ log.info("volume size is + {}",volumeSize);
         }
     }
 
-    private void startNeuronGeneration(BoundingBox3d boundingBox, TmNeuronMetadata neuron) throws Exception {
+    private void startNeuronGeneration(TmNeuronMetadata neuron) throws Exception {
         Long neuronId = neuron.getId();
-        log.trace("Generating random neuron {} with {} points", neuron.getName(), numPoints);
+        log.info("Generating random neuron {} with {} points", neuron.getName(), numPoints);
 
         // Choose a starting point for the neuron
         Vec3 startingPoint = getRandomPoint();
 
-        log.trace("Random starting point: {}", startingPoint);
+        log.info("Random starting point: {}", startingPoint);
 
         // Current direction of every branch
         Map<TmGeoAnnotation, Vec3> branchDirections = new HashMap<>();
@@ -294,7 +297,6 @@ log.info("volume size is + {}",volumeSize);
         List<TmGeoAnnotation> endPoints = new LinkedList<>();
 
         // Create root annotation at the starting point
-
         TmGeoAnnotation rootAnnotation = new TmGeoAnnotation();
         rootAnnotation.setId(nextGuid());
         rootAnnotation.setNeuronId(neuronId);
@@ -303,6 +305,7 @@ log.info("volume size is + {}",volumeSize);
         rootAnnotation.setX(startingPoint.getX());
         rootAnnotation.setY(startingPoint.getY());
         rootAnnotation.setZ(startingPoint.getZ());
+        log.info("Creating root annotation = {}",rootAnnotation);
 
         // Choose a direction and start tracing in that direction
         branchDirections.put(rootAnnotation, getRandomUnitVector());
@@ -369,7 +372,7 @@ log.info("volume size is + {}",volumeSize);
             Vec3 point = lastPoint.plus(direction.times(jumpSize));
 
             if (!boundingBox.contains(point)) {
-                log.trace("Out of bounds, starting over: "+neuron.getName());
+                log.info("Out of bounds, starting over: {}",point);
                 // Out of bounds, stop extending this branch
                 endPoints.remove(parent);
                 // If there are no other possible end points, start again at the root, in a new direction
@@ -397,6 +400,7 @@ log.info("volume size is + {}",volumeSize);
 
             i++;
 
+            log.info("New annotation created = {}",geoAnnotation);
             msgHeaders.put(HeaderConstants.METADATA, mapper.writeValueAsString(neuron));
             TmProtobufExchanger exchanger = new TmProtobufExchanger();
             byte[] msgBody = exchanger.serializeNeuron(neuron);
@@ -404,19 +408,12 @@ log.info("volume size is + {}",volumeSize);
         }
     }
 
-    private double getRandomDouble() {
-        double g = (random.nextGaussian()+2)/4f; // Move from (-1,1) to (-2,2) and then (0,1)
-        // If it's out of range, use a uniform distribution instead
-        if (g<0) return random.nextDouble();
-        if (g>1) return random.nextDouble();
-        return g;
-    }
-
     private Vec3 getRandomPoint() {
+        Random rand = new Random();
         return new Vec3(
-                boundingBox.getMinX() + boundingBox.getWidth()*getRandomDouble(),
-                boundingBox.getMinY() + boundingBox.getHeight()*getRandomDouble(),
-                boundingBox.getMinZ() +  boundingBox.getDepth()*getRandomDouble()
+                boundingBox.getMinX() + boundingBox.getWidth()*(0.2 + 0.6*rand.nextFloat()),
+                boundingBox.getMinY() + boundingBox.getHeight()*(0.2 + 0.6*rand.nextFloat()),
+                boundingBox.getMinZ() +  boundingBox.getDepth()*(0.2 + 0.6*rand.nextFloat())
         );
     }
 
