@@ -51,7 +51,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
     private static final UnitVec3 UNIT_Z = new UnitVec3(CoordinateAxis.Z);
     private static final double MIN_JUMP_SIZE = 200;
     private static final double MAX_JUMP_SIZE = 300;
-    private final String mluser = "user:olbrisd";
+    private final String user = "user:olbrisd";
 
     Long workspaceId;
     int numPoints;
@@ -140,7 +140,9 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
     }
 
     private int[] calculateVolumeSize(TmSample sample) throws Exception {
+        // replace this if running on mac
         File topFolderParam = new File(sample.getFilepath().replaceAll("nrs","Volumes"));
+        
         int octreeDepth = (int)sample.getNumImageryLevels().longValue();
         int zoomFactor = (int) Math.pow(2, octreeDepth - 1);
 
@@ -168,7 +170,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
     private void calcBoundingBox(Long workspaceId) throws Exception {
         // fetch the sample and extract the origin and scale attributes
         TiledMicroscopeDomainMgr domainMgr = new TiledMicroscopeDomainMgr(persistenceServer);
-        TmSample sample = domainMgr.getSampleByWorkspaceId(workspaceId, mluser);
+        TmSample sample = domainMgr.getSampleByWorkspaceId(workspaceId, user);
 
         // if no origin or scale attributes, stop (old sample)
         if (sample==null || sample.getOrigin()==null || sample.getScaling()==null)
@@ -228,7 +230,6 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
         neuronName = "Bot Generated Neuron #" + new Random().nextInt(1000000);
         neuron.setName(neuronName);
         exchanger.deserializeNeuron(null, neuron);
-        String user = "user:olbrisd";
         neuron.setOwnerKey(user);
 
         updateHeaders = new HashMap<String, Object>();
@@ -323,7 +324,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
         List<String> neuronIds = new ArrayList<>();
         neuronIds.add(neuron.getId().toString());
         msgHeaders.put(HeaderConstants.NEURONIDS, neuronIds);
-        msgHeaders.put(HeaderConstants.USER, mluser);
+        msgHeaders.put(HeaderConstants.USER, user);
         msgHeaders.put(HeaderConstants.WORKSPACE, neuron.getWorkspaceId().toString());
 
         int i = 1;

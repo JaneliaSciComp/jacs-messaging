@@ -1,9 +1,39 @@
 group 'org.hhmi.janelia'
 version '1.0'
 
+
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.hidetake:gradle-ssh-plugin:2.9.0'
+    }
+}
+apply plugin: 'org.hidetake.ssh'
+
+remotes {
+    messageServer {
+        role('messageServer')
+        host = 'c13u05'
+        user = '' // user needs access on c13u05
+        password = ''
+    }
+}
+
+def neuronBrokerOptions = [
+    messageServer:'c13u05',
+    persistenceServer:'http://jacs-webdav2:8280/rest-v2/',
+    receiveQueue: 'UpdatesProcessor',
+    sendQueue:'ModelRefresh',
+    appUser: 'admin',  // admin user on rabbitmq instance
+    appPassword: ''
+]
+def neuronBrokerJar = "sharedWorkspaceBroker-${version}.jar"
+def targetLoc = "/opt/neuronBroker/${neuronBrokerJar}"
 
 sourceCompatibility = 1.8
 
@@ -59,6 +89,50 @@ dependencies {
 
 }
 
+task startRabbit {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo '/sbin/service rabbitmq-server start', pty: true
+            }
+        }
+    }
+}
+
+task stopRabbit {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo '/sbin/service rabbitmq-server stop', pty: true
+            }
+        }
+    }
+}
+
+task deployNeuronBroker (dependsOn: brokerJar) {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo 'kill -9 `ps -aef | grep \'sharedWorkspace\' | awk \'{print $2}\'`', ignoreError: true,
+                        pty: true
+                put from: "${buildDir}/libs/${neuronBrokerJar}", into: targetLoc
+                executeBackground "nohup sh -c '( ( /opt/neuronBroker/startBroker.sh ) & )'", pty: true
+
+            }
+        }
+    }
+}
+
+task stopNeuronBroker (dependsOn: brokerJar) {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo 'kill -9 `ps -aef | grep \'sharedWorkspace\' | awk \'{print $2}\'`', ignoreError: true,
+                        pty: true
+            }
+        }
+    }
+}
 
 artifacts {
     archives brokerJar
