@@ -32,7 +32,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     Receiver incomingReceiver;
     Sender broadcastRefreshSender;
 
-    String systemOwner;
+    String systemOwner = "group:mouselight";
 
     TiledMicroscopeDomainMgr domainMgr;
     final HashMap<Long, String> ownershipRequests = new HashMap<Long,String>();

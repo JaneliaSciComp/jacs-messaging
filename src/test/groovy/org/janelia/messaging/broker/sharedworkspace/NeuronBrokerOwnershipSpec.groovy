@@ -15,7 +15,7 @@ import spock.lang.Specification
 class NeuronBrokerOwnershipSpec extends Specification {
     def neuronBroker
     def broadcastRefreshSender
-    def systemNeuron = "{\"class\":\"org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata\",\"name\":\"Neuron 4\",\"ownerKey\":\"user:mluser\",\"readers\":[\"user:mluser\"],\"writers\":[\"user:mluser\"],\"creationDate\":\"2017-11-09T22:43:28Z\",\"updatedDate\":\"2017-11-16T18:32:21Z\",\"workspaceRef\":\"TmWorkspace#2463496977254449297\",\"visible\":true,\"colorHex\":null,\"tags\":[],\"_id\":2468630633941827729}"
+    def systemNeuron = "{\"class\":\"org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata\",\"name\":\"Neuron 4\",\"ownerKey\":\"group:mouselight\",\"readers\":[\"user:mluser\"],\"writers\":[\"user:mluser\"],\"creationDate\":\"2017-11-09T22:43:28Z\",\"updatedDate\":\"2017-11-16T18:32:21Z\",\"workspaceRef\":\"TmWorkspace#2463496977254449297\",\"visible\":true,\"colorHex\":null,\"tags\":[],\"_id\":2468630633941827729}"
     def user1Neuron = "{\"class\":\"org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata\",\"name\":\"Neuron 4\",\"ownerKey\":\"user:testuser1\",\"readers\":[\"user:testuser1\"],\"writers\":[\"user:testuser1\"],\"creationDate\":\"2017-11-09T22:43:28Z\",\"updatedDate\":\"2017-11-16T18:32:21Z\",\"workspaceRef\":\"TmWorkspace#2463496977254449297\",\"visible\":true,\"colorHex\":null,\"tags\":[],\"_id\":2468630633941827729}"
     def metadataObj
 
