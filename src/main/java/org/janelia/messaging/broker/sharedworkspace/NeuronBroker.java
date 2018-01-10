@@ -32,7 +32,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     Receiver incomingReceiver;
     Sender broadcastRefreshSender;
 
-    final String SYSTEM_OWNER = "user:mluser";
+    String systemOwner;
 
     TiledMicroscopeDomainMgr domainMgr;
     final HashMap<Long, String> ownershipRequests = new HashMap<Long,String>();
@@ -66,6 +66,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         options.addOption("send", true, "Queue to send refreshes to.");
         options.addOption("u", true, "Username");
         options.addOption("p", true, "Password");
+        options.addOption("systemOwner", true, "Workstation user that owns system neurons");
 
 
         CommandLineParser parser = new DefaultParser();
@@ -79,8 +80,9 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
             sendQueue = cmd.getOptionValue("send");
             username = cmd.getOptionValue("u");
             password = cmd.getOptionValue("p");
+            systemOwner = cmd.getOptionValue("systemOwner");
             if (messageServer==null || receiveQueue==null || sendQueue==null || persistenceServer==null
-                    || username==null || password==null)
+                    || username==null || password==null || systemOwner==null)
                 return help(options);
         } catch (ParseException e) {
             System.out.println ("Error trying to parse command-line arguments");
@@ -296,7 +298,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                     // if they are make request to that user for ownership of those neurons
                                     if (neuronIds!=null) {
                                         for (TmNeuronMetadata neuron: neuronMetadataList) {
-                                            if (neuron.getOwnerKey()!=null && neuron.getOwnerKey().equals(SYSTEM_OWNER)) {
+                                            if (neuron.getOwnerKey()!=null && neuron.getOwnerKey().equals(systemOwner)) {
                                                 if (checkAndUpdateRequestLog(neuron.getId(), user)) {
                                                     // set ownership to user request, save metadata and fire off approval
                                                     updateOwnership(neuron, user);

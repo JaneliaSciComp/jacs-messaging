@@ -51,13 +51,14 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
     private static final UnitVec3 UNIT_Z = new UnitVec3(CoordinateAxis.Z);
     private static final double MIN_JUMP_SIZE = 200;
     private static final double MAX_JUMP_SIZE = 300;
-    private final String user = "user:olbrisd";
+
 
     Long workspaceId;
     int numPoints;
     static BoundingBox3d boundingBox;
     double[] scale;
     IdSource idSource;
+    String user;
     static Sender neuronMessager;
     static Receiver neuronConfirm;
     static ObjectMapper mapper = new ObjectMapper();
@@ -89,6 +90,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
         options.addOption("u", true, "Username for message server");
         options.addOption("p", true, "Password for message server");
         options.addOption("branchProb", false, "Branch Probability");
+        options.addOption("neuronOwner", true, "Owner for the Created Neuron");
 
 
         CommandLineParser parser = new DefaultParser();
@@ -102,6 +104,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
             workspaceId = Long.parseLong(cmd.getOptionValue("workspace"));
             refreshExchange = cmd.getOptionValue("refreshExchange");
             routingKey = cmd.getOptionValue("routingKey");
+            user = cmd.getOptionValue("neuronOwner");
             if (cmd.hasOption("branchProb")) {
                 branchProbability = Float.parseFloat(cmd.getOptionValue("branchProb"));
             } else {

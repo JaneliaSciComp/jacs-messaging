@@ -30,7 +30,8 @@ def neuronBrokerOptions = [
     receiveQueue: 'UpdatesProcessor',
     sendQueue:'ModelRefresh',
     appUser: 'admin',  // admin user on rabbitmq instance
-    appPassword: ''
+    appPassword: '',
+    systemOwner: 'group:mouselight'
 ]
 def neuronBrokerJar = "sharedWorkspaceBroker-${version}.jar"
 def targetLoc = "/opt/neuronBroker/${neuronBrokerJar}"
@@ -116,7 +117,10 @@ task deployNeuronBroker (dependsOn: brokerJar) {
                 executeSudo 'kill -9 `ps -aef | grep \'sharedWorkspace\' | awk \'{print $2}\'`', ignoreError: true,
                         pty: true
                 put from: "${buildDir}/libs/${neuronBrokerJar}", into: targetLoc
-                executeBackground "nohup sh -c '( ( /opt/neuronBroker/startBroker.sh ) & )'", pty: true
+                def cmdOptions = "-ms ${neuronBrokerOptions.messageServer} -ps ${neuronBrokerOptions.persistenceServer} " +
+                        "-rec ${neuronBrokerOptions.receiveQueue} -send ${neuronBrokerOptions.sendQueue} -systemOwner ${neuronBrokerOptions.systemOwner} " +
+                        "-u ${neuronBrokerOptions.appUser} -p ${neuronBrokerOptions.appPassword}"
+                executeBackground "nohup sh -c '( ( java -jar /opt/neuronBroker/sharedWorkspaceBroker-1.0.jar ${cmdOptions} ) & )'", pty: true
 
             }
         }
