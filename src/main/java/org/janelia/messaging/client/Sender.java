@@ -2,6 +2,8 @@ package org.janelia.messaging.client;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -11,6 +13,7 @@ import java.io.IOException;
  * Created by schauderd on 11/2/17.
  */
 public class Sender {
+    private static final Logger log = LoggerFactory.getLogger(Sender.class);
     Channel channel;
     ConnectionManager connectionManager;
     String exchange;
@@ -48,7 +51,7 @@ public class Sender {
                 new AMQP.BasicProperties.Builder()
                         .headers(messageHeaders)
                         .build(), messageBody);
-        System.out.println(" Message Sent to " + exchange +" with routingKey: " + routingKey);
+        log.info(" Message Sent to " + exchange + " with routingKey: " + routingKey);
     }
 
 }
