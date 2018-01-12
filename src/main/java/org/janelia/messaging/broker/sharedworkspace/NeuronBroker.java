@@ -132,7 +132,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     @Override
     // process failed message handling, redirecting to dead-letter queue
     public void handle(String consumerTag) {
-        log.info("FAILED MESSAGE DELIVERY, {}",consumerTag);
+        log.info("FAILED MESSAGE DELIVERY, {}", consumerTag);
     }
 
     private String convertLongString (LongString data) {
@@ -170,10 +170,11 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
     private void fireApprovalMessage(TmNeuronMetadata neuron, String user, boolean approval) throws Exception {
         Map<String,Object> msgHeaders = new HashMap<String,Object>();
-        msgHeaders.put(HeaderConstants.TYPE, MessageType.NEURON_OWNERSHIP_DECISION);
+        msgHeaders.put(HeaderConstants.TYPE, MessageType.NEURON_OWNERSHIP_DECISION.toString());
         List<String> neuronIds = new ArrayList<String>();
         neuronIds.add(neuron.getId().toString());
         msgHeaders.put(HeaderConstants.NEURONIDS, neuronIds);
+        msgHeaders.put(HeaderConstants.USER, user);
         msgHeaders.put(HeaderConstants.WORKSPACE, neuron.getWorkspaceId().toString());
         msgHeaders.put(HeaderConstants.DECISION, new Boolean(approval).toString());
         msgHeaders.put(HeaderConstants.DESCRIPTION, "Ownership approved by Neuron Owner");
@@ -183,18 +184,18 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
         log.info("Sending out neuron ownership message for neuron ID: " + neuron.getId()
                 + " with approval " + approval + msgHeaders.keySet());
-        broadcastRefreshSender.sendMessage(msgHeaders, new String().getBytes());
+        broadcastRefreshSender.sendMessage(msgHeaders, new String(" ").getBytes());
     }
 
     private void fireOwnershipRequestMessage(TmNeuronMetadata neuron, String user) throws Exception {
         Map<String,Object> msgHeaders = new HashMap<String,Object>();
-        msgHeaders.put(HeaderConstants.TYPE, MessageType.REQUEST_NEURON_OWNERSHIP);
+        msgHeaders.put(HeaderConstants.TYPE, MessageType.REQUEST_NEURON_OWNERSHIP.toString());
         List<String> neuronIds = new ArrayList<String>();
         neuronIds.add(neuron.getId().toString());
         msgHeaders.put(HeaderConstants.NEURONIDS, neuronIds);
         msgHeaders.put(HeaderConstants.WORKSPACE, neuron.getWorkspaceId().toString());
         msgHeaders.put(HeaderConstants.USER, user);
-        broadcastRefreshSender.sendMessage(msgHeaders, new String().getBytes());
+        broadcastRefreshSender.sendMessage(msgHeaders, new String(" ").getBytes());
     }
 
     @Override
@@ -292,6 +293,9 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                             try {
                                 String neuronIds = (String)convertLongString((LongString)msgHeaders.get(HeaderConstants.NEURONIDS));
                                 if (neuronIds!=null) {
+                                    neuronIds = neuronIds.replaceAll("\\[","");
+                                    neuronIds = neuronIds.replaceAll("\\]","");
+                                    log.info("Neurons requested for ownership change {}",neuronIds);
                                     List<String> neuronIdList = Arrays.asList(neuronIds.split(","));
                                     List<TmNeuronMetadata> neuronMetadataList = domainMgr.retrieve(neuronIdList, user);
                                     // go through list and check that these aren't owned by somebody else
@@ -303,6 +307,8 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                                     // set ownership to user request, save metadata and fire off approval
                                                     updateOwnership(neuron, user);
                                                     fireApprovalMessage(neuron, user, true);
+                                                    // clear out log for future requests
+                                                    removeRequestLog(neuron.getId(), user);
                                                 } else {
                                                     // existing request is already out there, send rejection
                                                     fireApprovalMessage(neuron, user, false);

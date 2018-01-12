@@ -6,6 +6,7 @@ import java.util.*;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
@@ -69,9 +70,10 @@ public class TiledMicroscopeRestClient {
     }
 
     public List<TmNeuronMetadata> getNeuronMetadata(List<String> neuronIds, String subjectKey) throws Exception {
+        String parsedNeuronIds = StringUtils.join(neuronIds, ",");
         Response response = getMouselightEndpoint("/neuron/metadata", subjectKey)
-                .queryParam("neuronId", neuronIds)
-                .request("multipart/mixed")
+                .queryParam("neuronIds", parsedNeuronIds)
+                .request()
                 .get();
         if (checkBadResponse(response, "getNeuronMetadata: "+neuronIds)) {
             throw new WebApplicationException(response);

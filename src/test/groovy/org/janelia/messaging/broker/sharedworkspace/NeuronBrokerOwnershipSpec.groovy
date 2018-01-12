@@ -88,7 +88,7 @@ class NeuronBrokerOwnershipSpec extends Specification {
         1 * broadcastRefreshSender.sendMessage(*_) >> { arguments ->
             final Map<String,Object> msgHeaders = arguments[0]
             print msgHeaders[HeaderConstants.TYPE]
-            assert msgHeaders[HeaderConstants.TYPE] == MessageType.REQUEST_NEURON_OWNERSHIP
+            assert msgHeaders[HeaderConstants.TYPE] == "REQUEST_NEURON_OWNERSHIP"
         }
     }
 

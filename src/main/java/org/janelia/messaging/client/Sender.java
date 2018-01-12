@@ -47,10 +47,14 @@ public class Sender {
     }
 
     public void sendMessage(Map<String,Object> messageHeaders, byte[] messageBody) throws Exception {
-        channel.basicPublish(exchange, routingKey,
-                new AMQP.BasicProperties.Builder()
-                        .headers(messageHeaders)
-                        .build(), messageBody);
+        try {
+            channel.basicPublish(exchange, routingKey,
+                    new AMQP.BasicProperties.Builder()
+                            .headers(messageHeaders)
+                            .build(), messageBody);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         log.info(" Message Sent to " + exchange + " with routingKey: " + routingKey);
     }
 
