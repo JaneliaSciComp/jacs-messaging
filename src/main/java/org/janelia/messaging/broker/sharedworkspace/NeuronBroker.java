@@ -256,6 +256,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     }
 
     private void fireErrorMessage(TmNeuronMetadata neuron, String user, String errorMessage) throws Exception {
+        log.info("Error message generated. Neuron/User/Error {}{}{}",neuron.getId(),user,errorMessage);
         Map<String,Object> msgHeaders = new HashMap<String,Object>();
         msgHeaders.put(HeaderConstants.TYPE, MessageType.ERROR_PROCESSING.toString());
         List<String> neuronIds = new ArrayList<String>();
@@ -317,7 +318,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                 broadcastRefreshSender.sendMessage(msgHeaders, protoBufStream);
                                 log.info("Sending out broadcast refresh for neuron save, ID: }" + newMetadataObj.getId());
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                log.error("Problems creating/saving neuron data",e);
                                 fireErrorMessage(metadataObj, user, "Problems creating/saving neuron data: stacktrace - "
                                         + e.getMessage());
                             }
@@ -335,6 +336,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                 byte[] msgBody = new byte[0];
                                 broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
                             } catch (Exception e) {
+                                log.error("Problems saving metadata",e);
                                 fireErrorMessage(metadataObj, user, "Problems saving metadata: stacktrace - "
                                         + e.getMessage());
                             }
@@ -362,6 +364,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                     }
                                 }
                             } catch (Exception e) {
+                                log.error("Problems processing ownership decision",e);
                                 fireErrorMessage(metadataObj, user, "Problems processing ownership decision: stacktrace - "
                                         + e.getMessage());
                             }
@@ -398,7 +401,9 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                     }
                                 }
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                log.error("Problems processing ownership request",e);
+                                fireErrorMessage(msgHeaders, "Problems processing ownership request: stacktrace - "
+                                        + e.getMessage());
                             }
 
 
