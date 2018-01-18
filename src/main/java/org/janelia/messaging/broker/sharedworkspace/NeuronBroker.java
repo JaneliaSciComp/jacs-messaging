@@ -394,8 +394,14 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                                     fireApprovalMessage(neuron, user, false);
                                                 }
                                             } else {
+                                                // in first release, save metadata and fire off approval
+                                                updateOwnership(neuron, user);
+                                                fireApprovalMessage(neuron, user, true);
+                                                // clear out log for future requests
+                                                removeRequestLog(neuron.getId(), user);
+
                                                 // make request to user who owns neurons for neuron ownership
-                                                fireOwnershipRequestMessage(neuron, user);
+                                                //fireOwnershipRequestMessage(neuron, user);
                                             }
                                         }
                                     }

@@ -60,6 +60,9 @@ class NeuronBrokerOwnershipSpec extends Specification {
         }
     }
 
+    /**
+     * commenting out for now, since in release 1 we aren't doing other owner requests
+     *
     def "requesting ownership of another user's neuron"() {
         setup:
         def domainMgr = Stub(TiledMicroscopeDomainMgr.class)
@@ -159,5 +162,6 @@ class NeuronBrokerOwnershipSpec extends Specification {
             assert msgHeaders[HeaderConstants.DECISION] == "false"
         }
     }
+     */
 
 }
