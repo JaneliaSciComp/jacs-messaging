@@ -395,7 +395,9 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                                 }
                                             } else {
                                                 // in first release, save metadata and fire off approval
-                                                updateOwnership(neuron, user);
+                                                //updateOwnership(neuron, user);
+                                                 domainMgr.saveMetadata(metadataObj, user);
+
                                                 fireApprovalMessage(neuron, user, true);
                                                 // clear out log for future requests
                                                 removeRequestLog(neuron.getId(), user);
