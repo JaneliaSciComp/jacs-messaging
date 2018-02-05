@@ -318,7 +318,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                 broadcastRefreshSender.sendMessage(msgHeaders, protoBufStream);
                                 log.info("Sending out broadcast refresh for neuron save, ID: }" + newMetadataObj.getId());
                             } catch (Exception e) {
-                                log.error("Problems creating/saving neuron data",e);
+                                log.error("Problems creating/saving neuron data", e);
                                 fireErrorMessage(metadataObj, user, "Problems creating/saving neuron data: stacktrace - "
                                         + e.getMessage());
                             }
@@ -336,8 +336,25 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                 byte[] msgBody = new byte[0];
                                 broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
                             } catch (Exception e) {
-                                log.error("Problems saving metadata",e);
+                                log.error("Problems saving metadata", e);
                                 fireErrorMessage(metadataObj, user, "Problems saving metadata: stacktrace - "
+                                        + e.getMessage());
+                            }
+                            break;
+                        case REQUEST_NEURON_ASSIGNMENT:
+                            try {
+                                // for now, don't check whether they are admin
+                                String targetuser = UtilityMethods.convertLongString((LongString) msgHeaders.get(HeaderConstants.TARGET_USER));
+                                metadataObj.setOwnerKey(targetuser);
+                                metadataObj.getReaders().add(targetuser);
+                                metadataObj.getWriters().add(targetuser);
+                                TmNeuronMetadata newMetadataObj = domainMgr.saveMetadata(metadataObj, user);
+                                String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
+                                fireApprovalMessage(newMetadataObj,user,true);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                log.error("Problems assigning new owner to neuron",e);
+                                fireErrorMessage(metadataObj, user, "Problems assigning new owner to neuron: stacktrace - "
                                         + e.getMessage());
                             }
                             break;
@@ -394,16 +411,8 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                                     fireApprovalMessage(neuron, user, false);
                                                 }
                                             } else {
-                                                // in first release, save metadata and fire off approval
-                                                //updateOwnership(neuron, user);
-                                                 domainMgr.saveMetadata(metadataObj, user);
-
-                                                fireApprovalMessage(neuron, user, true);
-                                                // clear out log for future requests
-                                                removeRequestLog(neuron.getId(), user);
-
                                                 // make request to user who owns neurons for neuron ownership
-                                                //fireOwnershipRequestMessage(neuron, user);
+                                                fireOwnershipRequestMessage(neuron, user);
                                             }
                                         }
                                     }

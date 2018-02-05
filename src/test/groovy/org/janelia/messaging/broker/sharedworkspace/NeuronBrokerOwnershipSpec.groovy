@@ -17,6 +17,7 @@ class NeuronBrokerOwnershipSpec extends Specification {
     def broadcastRefreshSender
     def systemNeuron = "{\"class\":\"org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata\",\"name\":\"Neuron 4\",\"ownerKey\":\"group:mouselight\",\"readers\":[\"user:mluser\"],\"writers\":[\"user:mluser\"],\"creationDate\":\"2017-11-09T22:43:28Z\",\"updatedDate\":\"2017-11-16T18:32:21Z\",\"workspaceRef\":\"TmWorkspace#2463496977254449297\",\"visible\":true,\"colorHex\":null,\"tags\":[],\"_id\":2468630633941827729}"
     def user1Neuron = "{\"class\":\"org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata\",\"name\":\"Neuron 4\",\"ownerKey\":\"user:testuser1\",\"readers\":[\"user:testuser1\"],\"writers\":[\"user:testuser1\"],\"creationDate\":\"2017-11-09T22:43:28Z\",\"updatedDate\":\"2017-11-16T18:32:21Z\",\"workspaceRef\":\"TmWorkspace#2463496977254449297\",\"visible\":true,\"colorHex\":null,\"tags\":[],\"_id\":2468630633941827729}"
+    def user4Neuron = '{"class":"org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata","name":"Neuron 4","ownerKey":"user:testuser4","readers":["user:testuser4","user:testuser1"],"writers":["user:testuser4","user:testuser1"],"creationDate":"2017-11-09T22:43:28Z","updatedDate":"2017-11-16T18:32:21Z","workspaceRef":"TmWorkspace#2463496977254449297","visible":true,"colorHex":null,"tags":[],"_id":2468630633941827729}'
     def metadataObj
 
     def setup() {
@@ -62,7 +63,7 @@ class NeuronBrokerOwnershipSpec extends Specification {
 
     /**
      * commenting out for now, since in release 1 we aren't doing other owner requests
-     *
+     */
     def "requesting ownership of another user's neuron"() {
         setup:
         def domainMgr = Stub(TiledMicroscopeDomainMgr.class)
@@ -162,6 +163,43 @@ class NeuronBrokerOwnershipSpec extends Specification {
             assert msgHeaders[HeaderConstants.DECISION] == "false"
         }
     }
-     */
+
+    def "assign owner of neuron to another person"() {
+        setup:
+        def domainMgr = Stub(TiledMicroscopeDomainMgr.class)
+        neuronBroker.setDomainMgr(domainMgr)
+        def metadataObj
+        ObjectMapper mapper = new ObjectMapper();
+        metadataObj = mapper.readValue(user1Neuron, TmNeuronMetadata.class);
+        def msgHeader = [ (HeaderConstants.USER) : LongStringHelper.asLongString("user:testuser2"),
+                          (HeaderConstants.TARGET_USER) : LongStringHelper.asLongString("user:testuser4"),
+                          (HeaderConstants.NEURONIDS) : LongStringHelper.asLongString("2468630633941827729"),
+                          (HeaderConstants.WORKSPACE) : LongStringHelper.asLongString("2463496977254449297"),
+                          (HeaderConstants.TYPE) : LongStringHelper.asLongString("REQUEST_NEURON_ASSIGNMENT"),
+                          (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1Neuron)
+        ]
+        def msgBody = "This is the message body".bytes
+        def properties = Stub(AMQP.BasicProperties)
+        properties.getHeaders() >> msgHeader
+        def testMessage = Stub(Delivery.class)
+        testMessage.getProperties() >> properties
+        testMessage.getBody() >> msgBody
+        domainMgr.saveMetadata(_,_) >> { args -> args[0] }
+
+        when:
+        neuronBroker.handle("", testMessage)
+
+        then: "broadcast updated neuron message sent out"
+        1 * broadcastRefreshSender.sendMessage(*_) >> { arguments ->
+            final Map<String,Object> msgHeaders = arguments[0]
+            assert msgHeaders[HeaderConstants.TYPE] == "NEURON_OWNERSHIP_DECISION"
+            def newNeuronValue = mapper.readValue(msgHeaders[HeaderConstants.METADATA], TmNeuronMetadata.class);
+            assert newNeuronValue.ownerKey == "user:testuser4"
+            assert newNeuronValue.readers.size() == 2
+            assert newNeuronValue.writers.size() == 2
+        }
+    }
+
+
 
 }

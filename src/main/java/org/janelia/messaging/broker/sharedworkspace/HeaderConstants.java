@@ -5,6 +5,7 @@ package org.janelia.messaging.broker.sharedworkspace;
  */
 public class HeaderConstants {
     public static final String USER = "user";
+    public static final String TARGET_USER = "target_user";
     public static final String NEURONIDS = "targetIds";
     public static final String WORKSPACE = "workspace";
     public static final String TYPE = "msgType";
