@@ -171,6 +171,7 @@ class NeuronBrokerOwnershipSpec extends Specification {
         def metadataObj
         ObjectMapper mapper = new ObjectMapper();
         metadataObj = mapper.readValue(user1Neuron, TmNeuronMetadata.class);
+        def metadataObj4 = mapper.readValue(user4Neuron, TmNeuronMetadata.class);
         def msgHeader = [ (HeaderConstants.USER) : LongStringHelper.asLongString("user:testuser2"),
                           (HeaderConstants.TARGET_USER) : LongStringHelper.asLongString("user:testuser4"),
                           (HeaderConstants.NEURONIDS) : LongStringHelper.asLongString("2468630633941827729"),
@@ -185,6 +186,7 @@ class NeuronBrokerOwnershipSpec extends Specification {
         testMessage.getProperties() >> properties
         testMessage.getBody() >> msgBody
         domainMgr.saveMetadata(_,_) >> { args -> args[0] }
+        domainMgr.setPermissions(_,_,_) >> { metadataObj4 }
 
         when:
         neuronBroker.handle("", testMessage)

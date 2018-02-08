@@ -348,9 +348,9 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                 metadataObj.setOwnerKey(targetuser);
                                 metadataObj.getReaders().add(targetuser);
                                 metadataObj.getWriters().add(targetuser);
-                                TmNeuronMetadata newMetadataObj = domainMgr.saveMetadata(metadataObj, user);
-                                String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
-                                fireApprovalMessage(newMetadataObj,user,true);
+                                TmNeuronMetadata newMetadataObj1 = domainMgr.saveMetadata(metadataObj, user);
+                                domainMgr.setPermissions(user, newMetadataObj1, targetuser);
+                                fireApprovalMessage(newMetadataObj1,user,true);
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 log.error("Problems assigning new owner to neuron",e);

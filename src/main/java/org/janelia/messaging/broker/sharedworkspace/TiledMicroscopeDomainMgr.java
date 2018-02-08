@@ -3,12 +3,21 @@ package org.janelia.messaging.broker.sharedworkspace;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.janelia.model.domain.DomainObject;
+import org.janelia.model.domain.Reference;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Response;
 
 /**
  * Singleton for managing the Tiled Microscope Domain Model and related data access.
@@ -90,5 +99,9 @@ public class TiledMicroscopeDomainMgr {
         TmNeuronMetadata neuronMetadata = new TmNeuronMetadata();
         neuronMetadata.setId(tmNeuron.getId());
         client.remove(neuronMetadata, subjectKey);
+    }
+
+    public TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) throws Exception {
+        return client.setPermissions(subjectKey, neuron, newOwner);
     }
 }

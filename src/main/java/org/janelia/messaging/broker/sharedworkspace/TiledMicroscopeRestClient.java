@@ -41,7 +41,8 @@ public class TiledMicroscopeRestClient {
 
     private static final Logger log = LoggerFactory.getLogger(TiledMicroscopeRestClient.class);
 
- private static final String REMOTE_MOUSELIGHT_DATA_PREFIX = "mouselight/data";
+    private static final String REMOTE_MOUSELIGHT_DATA_PREFIX = "mouselight/data";
+    private static final String REMOTE_DOMAIN_PERMISSIONS_PREFIX = "data/user/permissions";
 
     private final Client client;
     private String REMOTE_API_URL;
@@ -67,6 +68,11 @@ public class TiledMicroscopeRestClient {
         log.info("Endpoint target: {}", REMOTE_API_URL + REMOTE_MOUSELIGHT_DATA_PREFIX + suffix);
         return client.target(REMOTE_API_URL + REMOTE_MOUSELIGHT_DATA_PREFIX + suffix)
                 .queryParam("subjectKey", subjectKey);
+    }
+
+    public WebTarget getDomainPermissionsEndpoint() {
+        log.info("Endpoint target: {}", REMOTE_API_URL + REMOTE_DOMAIN_PERMISSIONS_PREFIX);
+        return client.target(REMOTE_API_URL + REMOTE_DOMAIN_PERMISSIONS_PREFIX);
     }
 
     public List<TmNeuronMetadata> getNeuronMetadata(List<String> neuronIds, String subjectKey) throws Exception {
@@ -192,6 +198,22 @@ public class TiledMicroscopeRestClient {
         if (checkBadResponse(response.getStatus(), "remove: " + neuronMetadata)) {
             throw new WebApplicationException(response);
         }
+    }
+
+    public TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) throws Exception {
+        Map<String, Object> params = new HashMap<>();
+        params.put("targetClass", TmNeuronMetadata.class.getName());
+        params.put("targetId", neuron.getId());
+        params.put("granteeKey", newOwner);
+        params.put("rights", "rw");
+        params.put("subjectKey", subjectKey);
+        Response response = getDomainPermissionsEndpoint()
+                .request("application/json")
+                .put(Entity.json(params));
+        if (checkBadResponse(response.getStatus(), "problem making request changePermissions to server: " + neuron + "," + newOwner)) {
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmNeuronMetadata.class);
     }
 
     protected boolean checkBadResponse(Response response, String failureError) {
