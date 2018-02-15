@@ -293,8 +293,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                         case NEURON_DELETE:
                             try {
                                 domainMgr.remove(metadataObj, user);
-                                byte[] msgBody = new byte[0];
-                                broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
+                                broadcastRefreshSender.sendMessage(msgHeaders, message.getBody());
                             } catch (Exception e) {
                                 e.printStackTrace();
                                 fireErrorMessage(metadataObj, user, "Problems deleting neuron data: stacktrace - "
@@ -333,8 +332,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                 TmNeuronMetadata newMetadataObj = domainMgr.saveMetadata(metadataObj, user);
                                 String serializedMetadata = mapper.writeValueAsString(newMetadataObj);
                                 msgHeaders.put(HeaderConstants.METADATA, serializedMetadata);
-                                byte[] msgBody = new byte[0];
-                                broadcastRefreshSender.sendMessage(msgHeaders, msgBody);
+                                broadcastRefreshSender.sendMessage(msgHeaders, message.getBody());
                             } catch (Exception e) {
                                 log.error("Problems saving metadata", e);
                                 fireErrorMessage(metadataObj, user, "Problems saving metadata: stacktrace - "
