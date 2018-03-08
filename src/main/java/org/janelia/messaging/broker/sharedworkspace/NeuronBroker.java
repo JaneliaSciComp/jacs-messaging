@@ -36,12 +36,14 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     String persistenceServer;
     String receiveQueue;
     String sendQueue;
+    String errorQueue;
     String backupQueue;
     String username;
     String password;
     Receiver incomingReceiver;
     BulkConsumer backupConsumer;
     Sender broadcastRefreshSender;
+    Sender errorSender;
     File backupLocation;
     long backupInterval = 604800000L;
 
@@ -109,6 +111,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         options.addOption("ps", true, "Persistence Server Host");
         options.addOption("rec", true, "Queue to listen to.");
         options.addOption("send", true, "Queue to send refreshes to.");
+        options.addOption("error", true, "Queue for error messages.");
         options.addOption("u", true, "Username");
         options.addOption("p", true, "Password");
         options.addOption("backupQueue", true, "Queue to off backups from.");
@@ -126,6 +129,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
             persistenceServer = cmd.getOptionValue("ps");
             receiveQueue = cmd.getOptionValue("rec");
             sendQueue = cmd.getOptionValue("send");
+            errorQueue = cmd.getOptionValue("error");
             username = cmd.getOptionValue("u");
             password = cmd.getOptionValue("p");
             systemOwner = cmd.getOptionValue("systemOwner");
@@ -157,10 +161,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         if (nb.parseArgs(args)) {
             nb.startBroker();
         }
-
-
-
-
     }
 
     private boolean help (Options options) {
@@ -181,6 +181,9 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
         broadcastRefreshSender = new Sender();
         broadcastRefreshSender.init(connManager, sendQueue, "");
+
+        errorSender = new Sender();
+        errorSender.init(connManager, errorQueue, "");
 
         startScheduledQueueBackups(connManager);
         try {
@@ -265,11 +268,13 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         msgHeaders.put(HeaderConstants.WORKSPACE, neuron.getWorkspaceId().toString());
         msgHeaders.put(HeaderConstants.USER, user);
         broadcastRefreshSender.sendMessage(msgHeaders, errorMessage.getBytes());
+        errorSender.sendMessage(msgHeaders, errorMessage.getBytes());
     }
 
     private void fireErrorMessage(Map<String,Object> msgHeaders, String errorMessage) throws Exception {
         msgHeaders.put(HeaderConstants.TYPE, MessageType.ERROR_PROCESSING.toString());
         broadcastRefreshSender.sendMessage(msgHeaders, errorMessage.getBytes());
+        errorSender.sendMessage(msgHeaders, errorMessage.getBytes());
     }
 
     @Override
@@ -279,6 +284,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         Map<String,Object> msgHeaders = message.getProperties().getHeaders();
         if (msgHeaders!=null) {
             String user = UtilityMethods.convertLongString((LongString) msgHeaders.get(HeaderConstants.USER));
+            log.info("Processing request from user {}",user);
             Long workspace = Long.parseLong(UtilityMethods.convertLongString((LongString) msgHeaders.get(HeaderConstants.WORKSPACE)));
             MessageType action =  MessageType.valueOf(UtilityMethods.convertLongString((LongString) msgHeaders.get(HeaderConstants.TYPE)));
             String metadata = UtilityMethods.convertLongString((LongString) msgHeaders.get(HeaderConstants.METADATA));

@@ -85,6 +85,42 @@ public class BulkConsumer {
         return msgCount;
     }
 
+    public int copyMetadata (OutputStream stream, MessageType filter) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        List<Map<String,Object>> backupMessages = new ArrayList<>();
+        GetResponse message = channel.basicGet(queue, purgeOnCopy);
+        int msgCount = 0;
+        if (message!=null) {
+            msgCount = message.getMessageCount();
+        }
+        while (message!=null && message.getMessageCount()>0) {
+            Map<String,Object> headers = cleanUpHeaders(message.getProps().getHeaders());
+            if (filter!=null) {
+                if (headers.get(HeaderConstants.TYPE)==filter) {
+                    backupMessages.add(headers);
+                }
+            } else {
+                backupMessages.add(headers);
+            }
+            message = channel.basicGet(queue, purgeOnCopy);
+        }
+
+        // process last message
+        if (message!=null) {
+            Map<String,Object> headers = cleanUpHeaders(message.getProps().getHeaders());
+            if (filter!=null) {
+                if (headers.get(HeaderConstants.TYPE)==filter) {
+                    backupMessages.add(headers);
+                }
+            } else {
+                backupMessages.add(headers);
+            }
+        }
+
+        mapper.writeValue(stream, backupMessages);
+        return msgCount;
+    }
+
     private Map<String,Object> cleanUpHeaders (Map<String,Object> headers) {
         Map<String,Object> newHeaders = new HashMap<String,Object>();
         newHeaders.put(HeaderConstants.USER, UtilityMethods.convertLongString((LongString) headers.get(HeaderConstants.USER)));

@@ -8,6 +8,12 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.glassfish.jersey.apache.connector.ApacheClientProperties;
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
@@ -59,6 +65,19 @@ public class TiledMicroscopeRestClient {
                 return true;
             }
         });
+
+        ClientConfig clientConfig = new ClientConfig();
+        // values are in milliseconds
+        clientConfig.property(ClientProperties.READ_TIMEOUT, 2000);
+        clientConfig.property(ClientProperties.CONNECT_TIMEOUT, 5000);
+
+        PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(100);
+        connectionManager.setDefaultMaxPerRoute(100);
+
+        clientConfig.property(ApacheClientProperties.CONNECTION_MANAGER, connectionManager);
+//        clientConfig.connectorProvider(new ApacheConnectorProvider());
+
         this.client = ClientBuilder.newClient();
         client.register(provider);
         client.register(MultiPartFeature.class);
@@ -82,6 +101,7 @@ public class TiledMicroscopeRestClient {
                 .request()
                 .get();
         if (checkBadResponse(response, "getNeuronMetadata: "+neuronIds)) {
+            response.close();
             throw new WebApplicationException(response);
         }
         List<TmNeuronMetadata> list = response.readEntity(new GenericType<List<TmNeuronMetadata>>() {});
@@ -95,6 +115,7 @@ public class TiledMicroscopeRestClient {
                 .request()
                 .put(Entity.entity(multiPart, multiPart.getMediaType()));
         if (checkBadResponse(response, "createMetadata: "+neuronMetadata)) {
+            response.close();
             throw new WebApplicationException(response);
         }
         return response.readEntity(TmNeuronMetadata.class);
@@ -107,6 +128,7 @@ public class TiledMicroscopeRestClient {
                 .request("application/json")
                 .get();
         if (checkBadResponse(response, "getTmWorkspace")) {
+            response.close();
             throw new WebApplicationException(response);
         }
         TmWorkspace workspace = response.readEntity(TmWorkspace.class);
@@ -117,6 +139,7 @@ public class TiledMicroscopeRestClient {
                     .request("application/json")
                     .get();
             if (checkBadResponse(response, "getTmSample")) {
+                response.close();
                 throw new WebApplicationException(response);
             }
         } else {
@@ -133,6 +156,7 @@ public class TiledMicroscopeRestClient {
                 .request()
                 .put(Entity.entity(multiPart, multiPart.getMediaType()));
         if (checkBadResponse(response, "create: "+neuronMetadata)) {
+            response.close();
             throw new WebApplicationException(response);
         }
         return response.readEntity(TmNeuronMetadata.class);
@@ -183,6 +207,7 @@ public class TiledMicroscopeRestClient {
                 .request()
                 .post(Entity.entity(multiPartEntity, MultiPartMediaTypes.MULTIPART_MIXED));
         if (checkBadResponse(response, "update: " +logStr)) {
+            response.close();
             throw new WebApplicationException(response);
         }
 
@@ -196,6 +221,7 @@ public class TiledMicroscopeRestClient {
                 .request()
                 .delete();
         if (checkBadResponse(response.getStatus(), "remove: " + neuronMetadata)) {
+            response.close();
             throw new WebApplicationException(response);
         }
     }
@@ -211,6 +237,7 @@ public class TiledMicroscopeRestClient {
                 .request("application/json")
                 .put(Entity.json(params));
         if (checkBadResponse(response.getStatus(), "problem making request changePermissions to server: " + neuron + "," + newOwner)) {
+            response.close();
             throw new WebApplicationException(response);
         }
         return response.readEntity(TmNeuronMetadata.class);
