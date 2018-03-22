@@ -1,6 +1,5 @@
 package org.janelia.messaging.client;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.GetResponse;
@@ -8,7 +7,6 @@ import com.rabbitmq.client.LongString;
 import org.janelia.messaging.broker.sharedworkspace.HeaderConstants;
 import org.janelia.messaging.broker.sharedworkspace.MessageType;
 import org.janelia.messaging.utility.UtilityMethods;
-import org.msgpack.jackson.dataformat.msgpack.MessagePackFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +83,33 @@ public class BulkConsumer {
         return msgCount;
     }
 
+    public int copyMessagesForUser (OutputStream stream, String user) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        List<VanillaBean> backupMessages = new ArrayList<>();
+        GetResponse message = channel.basicGet(queue, false);
+        int msgCount = 0;
+        if (message!=null) {
+            msgCount = message.getMessageCount();
+        }
+        while (message!=null && message.getMessageCount()>0) {
+            VanillaBean bean = new VanillaBean(cleanUpHeaders(message.getProps().getHeaders()),
+                    message.getBody());
+            if (bean.getHeaders().get("user").equals(user))
+                backupMessages.add(bean);
+            message = channel.basicGet(queue, false);
+        }
+
+        // process last message
+        if (message!=null) {
+            VanillaBean bean = new VanillaBean(cleanUpHeaders(message.getProps().getHeaders()), message.getBody());
+            if (bean.getHeaders().get("user").equals(user))
+                backupMessages.add(bean);
+        }
+
+        mapper.writeValue(stream, backupMessages);
+        return msgCount;
+    }
+
     public int copyMetadata (OutputStream stream, MessageType filter) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         List<Map<String,Object>> backupMessages = new ArrayList<>();
@@ -136,31 +161,5 @@ public class BulkConsumer {
 
     public void setPurgeOnCopy(boolean purgeOnCopy) {
         this.purgeOnCopy = purgeOnCopy;
-    }
-
-    public class VanillaBean {
-        byte[] body;
-        Map<String,Object> headers;
-
-        VanillaBean(Map<String,Object> headers, byte[] body) {
-            this.headers = headers;
-            this.body = body;
-        }
-
-        public Map<String, Object> getHeaders() {
-            return headers;
-        }
-
-        public void setHeaders(Map<String, Object> headers) {
-            this.headers = headers;
-        }
-
-        public byte[] getBody() {
-            return body;
-        }
-
-        public void setBody(byte[] body) {
-            this.body = body;
-        }
     }
 }

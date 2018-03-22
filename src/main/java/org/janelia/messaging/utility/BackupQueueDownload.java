@@ -1,7 +1,6 @@
 package org.janelia.messaging.utility;
 
 import org.apache.commons.cli.*;
-import org.janelia.messaging.broker.sharedworkspace.MessageType;
 import org.janelia.messaging.client.BulkConsumer;
 import org.janelia.messaging.client.ConnectionManager;
 import org.slf4j.Logger;
@@ -16,19 +15,20 @@ import java.util.*;
 
 /**
  * Created by schauderd on 3/8/18.
- * Class used to download all data from a queue and extract useful metadata
+ * Class used to download all data from a queue and extract messages for a user
  */
-public class MetaQueueParser {
+public class BackupQueueDownload {
 
-    private static final Logger log = LoggerFactory.getLogger(MetaQueueParser.class);
+    private static final Logger log = LoggerFactory.getLogger(BackupQueueDownload.class);
     String messageServer;
     String backupQueue;
     String username;
     String password;
+    String filter;
     BulkConsumer backupConsumer;
     File backupLocation;
 
-    public MetaQueueParser() {
+    public BackupQueueDownload() {
     }
 
 
@@ -38,6 +38,7 @@ public class MetaQueueParser {
         options.addOption("ms", true, "Message Server Host");
         options.addOption("u", true, "Username");
         options.addOption("p", true, "Password");
+        options.addOption("filter", true, "User to filter on");
         options.addOption("backupQueue", true, "Queue to process.");
         options.addOption("backupLocation", true, "Location(directory) to write metadata to.");
 
@@ -51,6 +52,7 @@ public class MetaQueueParser {
             String backupLocParam = cmd.getOptionValue("backupLocation");
             username = cmd.getOptionValue("u");
             password = cmd.getOptionValue("p");
+            filter = cmd.getOptionValue("filter");
 
             // backup stuff
             if (backupLocParam != null) {
@@ -73,7 +75,7 @@ public class MetaQueueParser {
     }
 
     public static void main(String args[]) {
-        MetaQueueParser mp = new MetaQueueParser();
+        BackupQueueDownload mp = new BackupQueueDownload();
         if (mp.parseArgs(args)) {
             mp.processQueue();
         }
@@ -81,7 +83,7 @@ public class MetaQueueParser {
 
     private boolean help(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("MetaQueueParser", options);
+        formatter.printHelp("BackupQueueDownload", options);
         return false;
     }
 
@@ -95,7 +97,8 @@ public class MetaQueueParser {
             backupConsumer = new BulkConsumer();
             backupConsumer.init(connManager, backupQueue);
             backupConsumer.setPurgeOnCopy(false);
-            int msgCount = backupConsumer.copyMetadata(new FileOutputStream(backupLocation), MessageType.ERROR_PROCESSING);
+            int msgCount = backupConsumer.copyMessagesForUser(new FileOutputStream(backupLocation),
+                    filter);
             log.info("finished processing queue backup after processing {} messages", new Date(), msgCount);
         } catch (Exception e) {
             e.printStackTrace();
