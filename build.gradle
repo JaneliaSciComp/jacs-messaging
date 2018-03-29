@@ -71,9 +71,9 @@ task neuronGenerationJar(type: Jar) {
     with jar
 }
 
-task userRecoveryJar(type: Jar) {
+task queueBackupQueryJar(type: Jar) {
     manifest {
-        attributes 'Implementation-Title': 'User Message Recovery Utility',
+        attributes 'Implementation-Title': 'Queue Backup Query Utility',
                 'Implementation-Version': version,
                 'Main-Class': 'org.janelia.messaging.utility.BackupQueueDownload'
     }
@@ -83,9 +83,9 @@ task userRecoveryJar(type: Jar) {
 }
 
 
-task quickyParserJar(type: Jar) {
+task userRecoveryJar(type: Jar) {
     manifest {
-        attributes 'Implementation-Title': 'quickyParserJar',
+        attributes 'Implementation-Title': 'User Message Recovery Utility',
                 'Implementation-Version': version,
                 'Main-Class': 'org.janelia.messaging.utility.NeuronRecoveryUtility'
     }

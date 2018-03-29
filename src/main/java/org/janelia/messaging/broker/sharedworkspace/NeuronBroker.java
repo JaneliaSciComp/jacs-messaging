@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -40,17 +41,18 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     String backupQueue;
     String username;
     String password;
+    int rotatingLogCount = 1;
     Receiver incomingReceiver;
     BulkConsumer backupConsumer;
     Sender broadcastRefreshSender;
     Sender errorSender;
-    File backupLocation;
-    long backupInterval = 604800000L;
+    String backupLocation;
+    long backupInterval = 86400000L;
 
     String systemOwner = "group:mouselight";
 
     TiledMicroscopeDomainMgr domainMgr;
-    final HashMap<Long, String> ownershipRequests = new HashMap<Long,String>();
+    ConcurrentHashMap<Long,String> ownershipRequests = new ConcurrentHashMap<Long,String>();
 
 
     public NeuronBroker() {}
@@ -78,15 +80,14 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         // get next Saturday
         Calendar c=Calendar.getInstance();
         long startMillis = c.getTimeInMillis();
-        c.set(Calendar.DAY_OF_WEEK, Calendar.SATURDAY);
         c.set(Calendar.HOUR_OF_DAY, 0);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
-        c.add(Calendar.DATE, 7);
+        c.add(Calendar.DATE, 1);
         long endMillis = c.getTimeInMillis();
         long initDelay = endMillis-startMillis;
 
-        log.info("Configured scheduled backups to run with initial delay {} and every Saturday at midnight",initDelay);
+        log.info("Configured scheduled backups to run with initial delay {} and every day at midnight",initDelay);
         ScheduledExecutorService backupService = Executors.newScheduledThreadPool(5);
         backupService.scheduleAtFixedRate(()->{
             try {
@@ -94,7 +95,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                 backupConsumer = new BulkConsumer();
                 backupConsumer.init(connManager, backupQueue);
                 backupConsumer.setPurgeOnCopy(true);
-                int msgCount = backupConsumer.copyQueue(new FileOutputStream(backupLocation));
+                int msgCount = backupConsumer.copyQueue(new FileOutputStream(backupLocation + c.get(Calendar.DAY_OF_WEEK)));
                 log.info("finished scheduled backup at {} after backing up {} messages", new Date(),msgCount);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -136,21 +137,12 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
             // backup stuff
             backupQueue = cmd.getOptionValue("backupQueue");
-            String backupLocParam = cmd.getOptionValue("backupLocation");
-            if (backupLocParam!=null) {
-                if (!Files.exists(Paths.get(backupLocParam))) {
-                    Files.createFile(Paths.get(backupLocParam));
-                }
-                backupLocation = new File(backupLocParam);
-            }
+            backupLocation = cmd.getOptionValue("backupLocation");
             if (messageServer==null || receiveQueue==null || sendQueue==null || persistenceServer==null
-                    || username==null || password==null || systemOwner==null)
+                    || username==null || password==null || systemOwner==null || backupLocation==null)
                 return help(options);
         } catch (ParseException e) {
             System.out.println ("Error trying to parse command-line arguments");
-            return help(options);
-        } catch (IOException e) {
-            System.out.println ("Error trying to setup backup file");
             return help(options);
         }
         return true;
@@ -199,17 +191,6 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     // process failed message handling, redirecting to dead-letter queue
     public void handle(String consumerTag) {
         log.info("FAILED MESSAGE DELIVERY, {}", consumerTag);
-    }
-
-    private boolean checkAndUpdateRequestLog(Long neuronId, String user) {
-        synchronized (ownershipRequests) {
-            if (ownershipRequests.containsKey(neuronId)) {
-                return false;
-            } else {
-                ownershipRequests.put(neuronId, user);
-                return true;
-            }
-        }
     }
 
     private boolean removeRequestLog(Long neuronId, String user) {
@@ -403,25 +384,29 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
                                     // if they are make request to that user for ownership of those neurons
                                     if (neuronIds!=null) {
                                         for (TmNeuronMetadata neuron: neuronMetadataList) {
-                                            if (neuron.getOwnerKey()!=null && neuron.getOwnerKey().equals(systemOwner)) {
-                                                if (checkAndUpdateRequestLog(neuron.getId(), user)) {
+                                            String requestOwner = ownershipRequests.putIfAbsent(neuron.getId(), user);
+                                            if (requestOwner==null) {
+                                                if (neuron.getOwnerKey()!=null &&
+                                                        (neuron.getOwnerKey().equals(systemOwner) ||
+                                                                neuron.getOwnerKey().equals(user))) {
                                                     // set ownership to user request, save metadata and fire off approval
                                                     updateOwnership(neuron, user);
                                                     fireApprovalMessage(neuron, user, true);
                                                     // clear out log for future requests
-                                                    removeRequestLog(neuron.getId(), user);
+                                                    ownershipRequests.remove(neuron.getId());
                                                 } else {
                                                     // existing request is already out there, send rejection
                                                     fireApprovalMessage(neuron, user, false);
                                                 }
                                             } else {
                                                 // make request to user who owns neurons for neuron ownership
-                                                fireOwnershipRequestMessage(neuron, user);
+                                                fireApprovalMessage(neuron, user, false);
                                             }
                                         }
                                     }
                                 }
                             } catch (Exception e) {
+                                e.printStackTrace();
                                 log.error("Problems processing ownership request",e);
                                 fireErrorMessage(msgHeaders, "Problems processing ownership request: stacktrace - "
                                         + e.getMessage());
