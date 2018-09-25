@@ -91,15 +91,18 @@ public class NeuronRecoveryUtility {
 
                     String metadata = (String)headers.get(HeaderConstants.METADATA);
                     TmNeuronMetadata neuron = mapper.readValue(metadata, TmNeuronMetadata.class);
-                    byte[] msgBody = Base64.getDecoder().decode((String) message.get("body"));
-                    protoList.add(msgBody);
-                    neuronList.add(neuron);
+                    if (neuron.getName().equals(neuronName)) {
+                        byte[] msgBody = Base64.getDecoder().decode((String) message.get("body"));
+                        protoList.add(msgBody);
+                        neuronList.add(neuron);
+                    }
                 }
             }
 
            if (action==Action.LATEST) {
-               TmNeuronMetadata neuron = neuronList.get(neuronList.size()-1);
-               byte[] protoData = protoList.get(neuronList.size()-1);
+               TmNeuronMetadata neuron = neuronList.get(neuronList.size() - 1);
+               System.out.println (neuron.getName());
+               byte[] protoData = protoList.get(neuronList.size() - 1);
                exchanger.deserializeNeuron(new ByteArrayInputStream(protoData), neuron);
                SWCDataConverter converter = new SWCDataConverter();
                MatrixDrivenSWCExchanger matrixCalcs = new MatrixDrivenSWCExchanger(workspace);
