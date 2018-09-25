@@ -29,6 +29,7 @@ public class NeuronRecoveryUtility {
     Long workspace;
     String neuronName;
     String backupFile;
+    String swcLocation;
     String persistenceServer;
     enum Action {LIST, LATEST, TIMESTAMP};
     Action action;
@@ -40,6 +41,7 @@ public class NeuronRecoveryUtility {
         // read off message server host and exchange
         Options options = new Options();
         options.addOption("backupFile", true, "Backup File");
+        options.addOption("swcLocation", true, "Where to create SWC");
         options.addOption("persistenceServer", true, "Persistence Server");
         options.addOption("workspace", true, "Workspace Id");
         options.addOption("neuron", true, "Neuron Name");
@@ -53,11 +55,12 @@ public class NeuronRecoveryUtility {
             workspace = Long.parseLong(cmd.getOptionValue("workspace"));
             neuronName = cmd.getOptionValue("neuron");
             backupFile = cmd.getOptionValue("backupFile");
+            swcLocation = cmd.getOptionValue("swcLocation");
             persistenceServer = cmd.getOptionValue("persistenceServer");
             action = Action.valueOf(cmd.getOptionValue("action"));
 
             if (workspace == null || neuronName == null || action == null
-                    || backupFile == null || persistenceServer==null)
+                    || backupFile == null || persistenceServer==null || swcLocation==null)
                 return help(options);
         } catch (ParseException e) {
             System.out.println("Error trying to parse command-line arguments");
@@ -103,7 +106,7 @@ public class NeuronRecoveryUtility {
                matrixCalcs.init(persistenceServer, neuron.getOwnerKey());
                converter.setSWCExchanger(matrixCalcs);
                SWCData swcData = converter.fromTmNeuron(neuron);
-               swcData.write(new File("/Users/schauderd/recovery/output"));
+               swcData.write(new File(swcLocation));
             }
 
         } catch (Exception e) {
