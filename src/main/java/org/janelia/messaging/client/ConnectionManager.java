@@ -4,17 +4,25 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /**
  * Created by schauderd on 11/2/17.
  */
 public class ConnectionManager {
     ConnectionFactory factory;
     Channel channel;
+    ExecutorService executorService = null;
 
     static ConnectionManager connManager;
 
     private ConnectionManager() {
         
+    }
+
+    public void setThreadPoolSize(int threadPoolSize) {
+        executorService = Executors.newFixedThreadPool(threadPoolSize);
     }
     
     public static ConnectionManager getInstance() {
@@ -37,7 +45,12 @@ public class ConnectionManager {
         if (channel!=null && channel.isOpen()) {
             return channel;
         }
-        Connection conn = factory.newConnection();
+        Connection conn;
+        if (executorService!=null) {
+            conn = factory.newConnection(executorService);
+        } else {
+            conn = factory.newConnection();
+        }
         channel = conn.createChannel();
         return channel;
     }
