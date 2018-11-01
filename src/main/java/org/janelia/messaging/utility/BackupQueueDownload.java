@@ -93,13 +93,13 @@ public class BackupQueueDownload {
             ConnectionManager connManager = ConnectionManager.getInstance();
             connManager.configureTarget(messageServer, username, password);
 
-            log.info ("starting processing queue to {}", new Date(), backupLocation);
+            log.info ("starting processing queue to {}", backupLocation);
             backupConsumer = new BulkConsumer();
             backupConsumer.init(connManager, backupQueue);
             backupConsumer.setPurgeOnCopy(false);
-            int msgCount = backupConsumer.copyMessagesForUser(new FileOutputStream(backupLocation),
-                    filter);
-            log.info("finished processing queue backup after processing {} messages", new Date(), msgCount);
+            int msgCount = backupConsumer.copyQueue(new FileOutputStream(backupLocation));
+            log.info("finished processing queue backup after processing {} messages", msgCount);
+            System.exit(1);
         } catch (Exception e) {
             e.printStackTrace();
             log.error("Problem with processing queue, {}", e.getMessage());

@@ -99,12 +99,17 @@ public class BulkConsumer {
             message = channel.basicGet(queue, false);
         }
 
+
+        System.out.println ("Finished processing Rabbit Queue; starting export\n");
+
         // process last message
         if (message!=null) {
             VanillaBean bean = new VanillaBean(cleanUpHeaders(message.getProps().getHeaders()), message.getBody());
             if (bean.getHeaders().get("user").equals(user))
                 backupMessages.add(bean);
         }
+
+        System.out.println ("Finished processing Rabbit Queue; starting export\n");
 
         mapper.writeValue(stream, backupMessages);
         return msgCount;
