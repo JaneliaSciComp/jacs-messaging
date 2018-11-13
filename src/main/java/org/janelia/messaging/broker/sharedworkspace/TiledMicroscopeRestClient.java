@@ -154,6 +154,7 @@ public class TiledMicroscopeRestClient {
                 .field("protobufBytes", protobufStream, MediaType.APPLICATION_OCTET_STREAM_TYPE);
         Response response = getMouselightEndpoint("/workspace/neuron",subjectKey)
                 .request()
+                .header("username", neuronMetadata.getOwnerKey())
                 .put(Entity.entity(multiPart, multiPart.getMediaType()));
         if (checkBadResponse(response, "create: "+neuronMetadata)) {
             response.close();
