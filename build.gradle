@@ -43,6 +43,7 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven {
         url "http://maven.int.janelia.org/nexus/content/groups/public/"
     }
@@ -102,7 +103,7 @@ dependencies {
             'cglib:cglib-nodep:2.2',
             'org.objenesis:objenesis:1.2'
     )
-    compile group: 'org.janelia', name: 'jacs-model', version: '1.0'
+    compile group: 'org.janelia', name: 'jacs-model', version: '1.1.0.SNAPSHOT'
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.0.0'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
     compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-base', version: '2.5.4'
@@ -174,4 +175,8 @@ task stopNeuronBroker (dependsOn: brokerJar) {
 artifacts {
     archives brokerJar
     archives neuronGenerationJar
+}
+
+task updateWrapper(type: Wrapper) {
+    gradleVersion = "4.10.2"
 }
