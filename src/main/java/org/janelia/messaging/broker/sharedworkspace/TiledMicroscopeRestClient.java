@@ -76,7 +76,6 @@ public class TiledMicroscopeRestClient {
         connectionManager.setDefaultMaxPerRoute(100);
 
         clientConfig.property(ApacheClientProperties.CONNECTION_MANAGER, connectionManager);
-//        clientConfig.connectorProvider(new ApacheConnectorProvider());
 
         this.client = ClientBuilder.newClient();
         client.register(provider);
@@ -99,6 +98,7 @@ public class TiledMicroscopeRestClient {
         Response response = getMouselightEndpoint("/neuron/metadata", subjectKey)
                 .queryParam("neuronIds", parsedNeuronIds)
                 .request()
+                .header("username", subjectKey)
                 .get();
         if (checkBadResponse(response, "getNeuronMetadata: "+neuronIds)) {
             response.close();
@@ -113,6 +113,7 @@ public class TiledMicroscopeRestClient {
                 .field("neuronMetadata", neuronMetadata, MediaType.APPLICATION_JSON_TYPE);
         Response response = getMouselightEndpoint("/workspace/neuron",subjectKey)
                 .request()
+                .header("username", subjectKey)
                 .put(Entity.entity(multiPart, multiPart.getMediaType()));
         if (checkBadResponse(response, "createMetadata: "+neuronMetadata)) {
             response.close();
@@ -126,6 +127,7 @@ public class TiledMicroscopeRestClient {
         Response response = getMouselightEndpoint("/workspace/{workspaceId}", subjectKey)
                 .resolveTemplate("workspaceId", workspaceId)
                 .request("application/json")
+                .header("username", subjectKey)
                 .get();
         if (checkBadResponse(response, "getTmWorkspace")) {
             response.close();
@@ -137,6 +139,7 @@ public class TiledMicroscopeRestClient {
             response = getMouselightEndpoint("/sample/{sampleId}", subjectKey)
                     .resolveTemplate("sampleId", workspace.getSampleId())
                     .request("application/json")
+                    .header("username", subjectKey)
                     .get();
             if (checkBadResponse(response, "getTmSample")) {
                 response.close();
@@ -154,7 +157,7 @@ public class TiledMicroscopeRestClient {
                 .field("protobufBytes", protobufStream, MediaType.APPLICATION_OCTET_STREAM_TYPE);
         Response response = getMouselightEndpoint("/workspace/neuron",subjectKey)
                 .request()
-                .header("username", neuronMetadata.getOwnerKey())
+                .header("username", subjectKey)
                 .put(Entity.entity(multiPart, multiPart.getMediaType()));
         if (checkBadResponse(response, "create: "+neuronMetadata)) {
             response.close();
@@ -206,6 +209,7 @@ public class TiledMicroscopeRestClient {
         
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
                 .request()
+                .header("username", subjectKey)
                 .post(Entity.entity(multiPartEntity, MultiPartMediaTypes.MULTIPART_MIXED));
         if (checkBadResponse(response, "update: " +logStr)) {
             response.close();
@@ -220,6 +224,7 @@ public class TiledMicroscopeRestClient {
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
                 .queryParam("neuronId", neuronMetadata.getId())
                 .request()
+                .header("username", subjectKey)
                 .delete();
         if (checkBadResponse(response.getStatus(), "remove: " + neuronMetadata)) {
             response.close();
