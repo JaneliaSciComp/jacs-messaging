@@ -108,7 +108,7 @@ dependencies {
 
     project.ext {
         JACKSON_VERSION = '2.9.5'
-	JERSEY_VERSION = "2.27"
+        JERSEY_VERSION = "2.27"
     }
 
     // Jackson deps
