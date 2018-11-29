@@ -102,7 +102,7 @@ dependencies {
             'cglib:cglib-nodep:2.2',
             'org.objenesis:objenesis:1.2'
     )
-    compile group: 'org.janelia', name: 'jacs-model', version: '1.1.0.SNAPSHOT'
+    compile group: 'org.janelia', name: 'jacs-model', version: '1.1.1'
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.0.0'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
