@@ -1,12 +1,5 @@
 package org.janelia.messaging.utility.bot.neurongenerator;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.CancelCallback;
 import com.rabbitmq.client.DeliverCallback;
@@ -16,25 +9,43 @@ import com.rabbitmq.client.impl.LongStringHelper;
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.SeekableStream;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.janelia.messaging.broker.sharedworkspace.HeaderConstants;
 import org.janelia.messaging.broker.sharedworkspace.MessageType;
 import org.janelia.messaging.broker.sharedworkspace.TiledMicroscopeDomainMgr;
-import org.janelia.messaging.client.Receiver;
-import org.janelia.model.domain.Reference;
-
-import org.apache.commons.cli.*;
 import org.janelia.messaging.client.ConnectionManager;
+import org.janelia.messaging.client.Receiver;
 import org.janelia.messaging.client.Sender;
 import org.janelia.messaging.utility.bot.neurongenerator.geom.CoordinateAxis;
 import org.janelia.messaging.utility.bot.neurongenerator.geom.Rotation3d;
 import org.janelia.messaging.utility.bot.neurongenerator.geom.UnitVec3;
 import org.janelia.messaging.utility.bot.neurongenerator.geom.Vec3;
-import org.janelia.model.domain.tiledMicroscope.*;
+import org.janelia.model.domain.Reference;
+import org.janelia.model.domain.tiledMicroscope.TmGeoAnnotation;
+import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
+import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
+import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.janelia.model.util.IdSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.media.jai.RenderedImageAdapter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Modification of the RandomNeuronGenerator in LVV so that it can feed neuron
@@ -73,6 +84,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
     static String password;
     static String neuronName;
     static boolean neuronCreated = false;
+    int connectRetries = 3;
 
     // ThreadLocalRandom supports ranges, which Random does not
     private ThreadLocalRandom random = ThreadLocalRandom.current();
@@ -223,7 +235,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
         ConnectionManager connManager = ConnectionManager.getInstance();
         connManager.configureTarget(messageServer, username, password);
         neuronMessager = new Sender();
-        neuronMessager.init(connManager, messageQueue, routingKey);
+        neuronMessager.init(connManager, messageQueue, routingKey, connectRetries);
 
         Reference workspaceRef = Reference.createFor("org.janelia.model.domain.tiledMicroscope.TmWorkspace",
                 workspaceId);
@@ -246,7 +258,7 @@ public class NeuronGenerationBot implements DeliverCallback, CancelCallback {
 
         // listen for creation of the neuron with an id
         neuronConfirm = new Receiver();
-        neuronConfirm.init(connManager, refreshExchange, true);
+        neuronConfirm.init(connManager, refreshExchange, true, connectRetries);
         neuronConfirm.setupReceiver(this);
     }
 

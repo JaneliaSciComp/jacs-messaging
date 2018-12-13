@@ -22,14 +22,14 @@ public class Sender {
     public Sender() {
     }
 
-    public void init(ConnectionManager pm, String exchange, String routingKey) {
+    public void init(ConnectionManager pm, String exchange, String routingKey, int connectRetries) {
         this.connectionManager = pm;
         this.exchange = exchange;
         this.routingKey = routingKey;
 
         // get a channel from the connectionManager
         try {
-            channel = connectionManager.getConnection();
+            channel = connectionManager.getConnection(connectRetries);
         } catch (Exception e) {
             e.printStackTrace();
         }

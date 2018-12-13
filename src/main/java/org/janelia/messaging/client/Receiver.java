@@ -20,12 +20,12 @@ public class Receiver {
 
     }
 
-    public void init(ConnectionManager pm, String bindingName, boolean temporary) {
+    public void init(ConnectionManager pm, String bindingName, boolean temporary, int connectRetries) {
         this.connectionManager = pm;
 
         // get a channel from the connectionManager
         try {
-            channel = connectionManager.getConnection();
+            channel = connectionManager.getConnection(connectRetries);
             
             // if no queue defined, get random queue and bind to this exchange
             if (temporary) {

@@ -31,15 +31,14 @@ public class BulkConsumer {
     boolean purgeOnCopy;
 
     public BulkConsumer() {
-
     }
 
-    public void init(ConnectionManager pm, String bindingName) {
+    public void init(ConnectionManager pm, String bindingName, int connectRetries) {
         this.connectionManager = pm;
 
         // get a channel from the connectionManager
         try {
-            channel = connectionManager.getConnection();
+            channel = connectionManager.getConnection(connectRetries);
 
             this.queue = bindingName;
         } catch (Exception e) {

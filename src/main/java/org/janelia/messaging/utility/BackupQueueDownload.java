@@ -27,12 +27,12 @@ public class BackupQueueDownload {
     String filter;
     BulkConsumer backupConsumer;
     File backupLocation;
+    int connectRetries = 3;
 
     public BackupQueueDownload() {
     }
 
-
-    public boolean parseArgs(String[] args) {
+    private boolean parseArgs(String[] args) {
         // read off message server host and exchange
         Options options = new Options();
         options.addOption("ms", true, "Message Server Host");
@@ -95,7 +95,7 @@ public class BackupQueueDownload {
 
             log.info ("starting processing queue to {}", backupLocation);
             backupConsumer = new BulkConsumer();
-            backupConsumer.init(connManager, backupQueue);
+            backupConsumer.init(connManager, backupQueue, connectRetries);
             backupConsumer.setPurgeOnCopy(false);
             int msgCount = backupConsumer.copyQueue(new FileOutputStream(backupLocation));
             log.info("finished processing queue backup after processing {} messages", msgCount);

@@ -5,8 +5,12 @@ import com.rabbitmq.client.CancelCallback;
 import com.rabbitmq.client.DeliverCallback;
 import com.rabbitmq.client.Delivery;
 import com.rabbitmq.client.LongString;
-import com.rabbitmq.client.impl.LongStringHelper;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.janelia.messaging.client.BulkConsumer;
 import org.janelia.messaging.client.ConnectionManager;
 import org.janelia.messaging.client.Receiver;
@@ -16,12 +20,14 @@ import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -48,6 +54,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
     Sender errorSender;
     String backupLocation;
     long backupInterval = 86400000L;
+    int connectRetries = 3;
 
     String systemOwner = "group:mouselight";
 
@@ -93,7 +100,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
             try {
                 log.info ("starting scheduled backup at {} to {}", new Date(), backupLocation);
                 backupConsumer = new BulkConsumer();
-                backupConsumer.init(connManager, backupQueue);
+                backupConsumer.init(connManager, backupQueue, connectRetries);
                 backupConsumer.setPurgeOnCopy(true);
                 int msgCount = backupConsumer.copyQueue(new FileOutputStream(backupLocation + c.get(Calendar.DAY_OF_WEEK)));
                 log.info("finished scheduled backup at {} after backing up {} messages", new Date(),msgCount);
@@ -168,14 +175,14 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         ConnectionManager connManager = ConnectionManager.getInstance();
         connManager.configureTarget(messageServer, username, password);
         incomingReceiver = new Receiver();
-        incomingReceiver.init(connManager, receiveQueue, false);
+        incomingReceiver.init(connManager, receiveQueue, false, connectRetries);
         incomingReceiver.setAutoAck(true);
 
         broadcastRefreshSender = new Sender();
-        broadcastRefreshSender.init(connManager, sendQueue, "");
+        broadcastRefreshSender.init(connManager, sendQueue, "", connectRetries);
 
         errorSender = new Sender();
-        errorSender.init(connManager, errorQueue, "");
+        errorSender.init(connManager, errorQueue, "", connectRetries);
 
         startScheduledQueueBackups(connManager);
         try {

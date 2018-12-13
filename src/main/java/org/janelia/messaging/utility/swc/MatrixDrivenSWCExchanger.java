@@ -1,6 +1,5 @@
 package org.janelia.messaging.utility.swc;
 
-
 import Jama.Matrix;
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
