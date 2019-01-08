@@ -6,10 +6,11 @@ import java.util.Map;
  * Created by schauderd on 3/21/18.
  */
 public class VanillaBean {
+    private byte[] body;
+    private Map<String,Object> headers;
+
     VanillaBean() {
     }
-    byte[] body;
-    Map<String,Object> headers;
 
     VanillaBean(Map<String,Object> headers, byte[] body) {
         this.headers = headers;

@@ -39,10 +39,9 @@ public class BulkConsumer {
         // get a channel from the connectionManager
         try {
             channel = connectionManager.getConnection(connectRetries);
-
             this.queue = bindingName;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error trying to connect to {}", bindingName, e);
         }
     }
 
@@ -50,10 +49,10 @@ public class BulkConsumer {
         try {
             channel.close();
         } catch (TimeoutException e) {
-            e.printStackTrace();
+            log.warn("Close timeout", e);
         } catch (IOException e) {
             // problems closing out the
-            e.printStackTrace();
+            log.warn("Close error", e);
         }
     }
 
