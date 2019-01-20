@@ -180,6 +180,11 @@ artifacts {
     archives neuronGenerationJar
 }
 
+license {
+    header rootProject.file('LICENSE.md')
+    exclude "**/*"
+}
+
 downloadLicenses {
 	includeProjectDependencies = true
 	dependencyConfiguration = 'compile'
