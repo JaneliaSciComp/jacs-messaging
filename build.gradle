@@ -44,7 +44,7 @@ repositories {
     mavenCentral()
     mavenLocal()
     maven {
-        url "http://maven.int.janelia.org/nexus/content/groups/public/"
+        url "https://raw.githubusercontent.com/JaneliaSciComp/mvn-repo/master/repository/"
     }
 }
 
@@ -102,7 +102,7 @@ dependencies {
             'cglib:cglib-nodep:2.2',
             'org.objenesis:objenesis:1.2'
     )
-    compile group: 'org.janelia', name: 'jacs-model', version: '1.1.1'
+    compile group: 'org.janelia.jacs-model', name: 'jacs-model-core', version: '1.1.1'
     compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.5.1'
     compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
 
