@@ -18,7 +18,7 @@ jobs:
       - restore_cache:
           key: jacs-messaging-{{ checksum "build.gradle" }}
       
-      - run: ./gradlew jar test
+      - run: gradle jar test
       
       - save_cache:
           key: jacs-messaging-{{ checksum "build.gradle" }}
