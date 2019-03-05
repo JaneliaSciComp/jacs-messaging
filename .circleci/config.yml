@@ -1,0 +1,36 @@
+version: 2
+jobs:
+  build:
+
+    branches:
+      only:
+       - master
+   
+    working_directory: ~/jacs-messaging
+
+    docker:
+      - image: circleci/openjdk:8u171-jdk
+
+    steps:
+
+      - checkout
+
+      - restore_cache:
+          key: jacs-messaging-{{ checksum "build.gradle" }}
+      
+      - run: ./gradlew jar test
+      
+      - save_cache:
+          key: jacs-messaging-{{ checksum "build.gradle" }}
+          paths:
+            - ~/.gradle
+
+      - store_test_results:
+          paths: 
+            - build/test-results/test
+      
+      - store_artifacts:
+          paths: 
+            - build/libs/jacs-messaging-*.jar
+            - build/libs/sharedWorkspaceBroker-*.jar
+

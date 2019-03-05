@@ -1,5 +1,7 @@
 # JACS Messaging
 
+[![CircleCI](https://circleci.com/gh/JaneliaSciComp/jacs-messaging.svg?style=svg)](https://circleci.com/gh/JaneliaSciComp/jacs-messaging)
+
 ## Build 
 
 Build the library jar (jacs-messaging-<vers>.jar):
