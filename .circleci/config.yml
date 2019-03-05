@@ -30,7 +30,5 @@ jobs:
             - build/test-results/test
       
       - store_artifacts:
-          paths: 
-            - build/libs/jacs-messaging-*.jar
-            - build/libs/sharedWorkspaceBroker-*.jar
+          path: build/libs/*.jar
 
