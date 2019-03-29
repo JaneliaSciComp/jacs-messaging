@@ -167,6 +167,7 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
         // set up permanent receiver on queue
         ConnectionManager connManager = ConnectionManager.getInstance();
         connManager.configureTarget(messageServer, username, password);
+        log.info("Configured target {} with user {}", messageServer, username);
         incomingReceiver = new Receiver();
         incomingReceiver.init(connManager, receiveQueue, false);
         incomingReceiver.setAutoAck(true);
@@ -179,12 +180,13 @@ public class NeuronBroker implements DeliverCallback, CancelCallback {
 
         startScheduledQueueBackups(connManager);
         try {
+            log.info("Starting receiver...");
             incomingReceiver.setupReceiver(this);
         } catch (Exception e) {
-            System.out.println ("error setting up broker to receive/send messages");
-            e.printStackTrace();
+            log.error("Error setting up broker to receive/send messages", e);
         }
 
+        log.info("Neuron broker ready.");
     }
 
     @Override
