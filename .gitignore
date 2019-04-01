@@ -3,3 +3,7 @@
 build
 local
 out
+*~
+.DS_Store
+.settings
+.project

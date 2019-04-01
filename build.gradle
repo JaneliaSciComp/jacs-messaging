@@ -4,6 +4,7 @@ version '1.1.0'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'maven-publish'
+
 buildscript {
     repositories {
         jcenter()
@@ -12,6 +13,17 @@ buildscript {
         classpath 'org.hidetake:gradle-ssh-plugin:2.9.0'
     }
 }
+
+plugins {
+    id "com.github.hierynomus.license" version "0.15.0"
+}
+
+group 'org.hhmi.janelia'
+version '1.0'
+
+apply plugin: 'groovy'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
 apply plugin: 'org.hidetake.ssh'
 
 remotes {
@@ -194,4 +206,14 @@ artifacts {
 
 task updateWrapper(type: Wrapper) {
     gradleVersion = "4.10.2"
+}
+
+license {
+    header rootProject.file('LICENSE.md')
+    exclude "**/*"
+}
+
+downloadLicenses {
+	includeProjectDependencies = true
+	dependencyConfiguration = 'compile'
 }
