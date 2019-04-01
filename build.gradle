@@ -16,7 +16,7 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'org.hidetake.ssh'
 
-group 'org.hhmi.janelia'
+group 'org.janelia.jacs-messaging'
 version '1.1.0'
 
 remotes {
