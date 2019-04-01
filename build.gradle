@@ -16,7 +16,7 @@ apply plugin: 'java'
 apply plugin: 'maven-publish'
 apply plugin: 'org.hidetake.ssh'
 
-group 'org.janelia.jacs-messaging'
+group 'org.janelia.messaging'
 version '1.1.0'
 
 remotes {
@@ -45,6 +45,7 @@ def neuronBrokerJar = "sharedWorkspaceBroker-${version}.jar"
 def targetLoc = "/opt/neuronBroker/${neuronBrokerJar}"
 
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
