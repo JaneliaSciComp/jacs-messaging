@@ -54,6 +54,10 @@ repositories {
     }
 }
 
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
 task brokerJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'Shared Workspace Broker',
@@ -196,8 +200,19 @@ artifacts {
     archives neuronGenerationJar
 }
 
+publishing {
+    publications {
+        mavenJar(MavenPublication) {
+            from components.java
+            artifact sourceJar {
+                classifier 'sources'
+            }
+        }
+    }
+}
+
 task updateWrapper(type: Wrapper) {
-    gradleVersion = "4.10.2"
+    gradleVersion = "5.1.1"
 }
 
 license {
