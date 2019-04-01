@@ -40,6 +40,7 @@ def neuronBrokerOptions = [
     backupQueue: 'ClientRefresh',
     backupLocation: '/opt/neuronBroker/backup/backupQueue'
 ]
+
 def neuronBrokerJar = "sharedWorkspaceBroker-${version}.jar"
 def targetLoc = "/opt/neuronBroker/${neuronBrokerJar}"
 
@@ -64,7 +65,6 @@ task brokerJar(type: Jar) {
     with jar
 }
 
-
 task neuronGenerationJar(type: Jar) {
     manifest {
         attributes 'Implementation-Title': 'Neuron Generation Bot',
@@ -86,7 +86,6 @@ task queueBackupQueryJar(type: Jar) {
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
-
 
 task userRecoveryJar(type: Jar) {
     manifest {
