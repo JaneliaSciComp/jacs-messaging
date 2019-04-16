@@ -30,6 +30,9 @@ Deploy Neuron Broker to remote server:
 Stop Neuron Broker on remote server:
 `gradle stopNeuronBroker`
 
+## Publish to maven repo
+`gradle -PmavenRepoUser=YourUserName -PmavenRepoPassword=YourPassword publish`
+
 ## Summary
 
 This module contains common classes for supporting clients performing asynchronous messaging in java using rabbitMQ, a popular and lightweight messaging framework.  
