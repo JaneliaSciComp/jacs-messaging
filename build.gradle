@@ -51,12 +51,16 @@ repositories {
     mavenCentral()
     mavenLocal()
     maven {
-        url "https://raw.githubusercontent.com/JaneliaSciComp/mvn-repo/master/repository/"
+        url "https://nexus.janelia.org/repository/maven-releases"
+    }
+    maven {
+        url "https://nexus.janelia.org/repository/maven-snapshots"
     }
 }
 
 task sourceJar(type: Jar) {
     from sourceSets.main.allJava
+    archiveClassifier = 'sources'
 }
 
 task brokerJar(type: Jar) {
@@ -68,11 +72,11 @@ task brokerJar(type: Jar) {
     baseName = 'sharedWorkspaceBroker'
     from {
         configurations.compile.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
         configurations.runtime.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
     }
     with jar
 }
@@ -86,11 +90,11 @@ task neuronGenerationJar(type: Jar) {
     baseName = 'NeuronGenerationBot'
     from {
         configurations.compile.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
         configurations.runtime.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
     }
     with jar
 }
@@ -104,11 +108,11 @@ task queueBackupQueryJar(type: Jar) {
     baseName = 'UserRecovery'
     from {
         configurations.compile.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
         configurations.runtime.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
     }
     with jar
 }
@@ -122,11 +126,11 @@ task userRecoveryJar(type: Jar) {
     baseName = 'NeuronRecoveryUtility'
     from {
         configurations.compile.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
         configurations.runtime.collect {
-	    it.isDirectory() ? it : zipTree(it)
-	}
+            it.isDirectory() ? it : zipTree(it)
+        }
     }
     with jar
 }
@@ -235,8 +239,25 @@ publishing {
     publications {
         mavenJar(MavenPublication) {
             from components.java
-            artifact sourceJar {
-                classifier 'sources'
+            artifact sourceJar
+        }
+    }
+    ext {
+        if (!project.hasProperty('mavenRepoUser')) {
+            mavenRepoUser = ''
+        }
+        if (!project.hasProperty('mavenRepoPassword')) {
+            mavenRepoPassword = ''
+        }
+    }
+    repositories {
+        maven {
+            def releasesRepoUrl = 'https://nexus.janelia.org/repository/maven-releases'
+            def snapshotsRepoUrl = 'https://nexus.janelia.org/repository/maven-snapshots'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username "${mavenRepoUser}"
+                password "${mavenRepoPassword}"
             }
         }
     }
@@ -252,6 +273,6 @@ license {
 }
 
 downloadLicenses {
-	includeProjectDependencies = true
-	dependencyConfiguration = 'compile'
+        includeProjectDependencies = true
+        dependencyConfiguration = 'compile'
 }
