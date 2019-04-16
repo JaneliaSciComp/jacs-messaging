@@ -21,18 +21,16 @@ jobs:
       - restore_cache:
           keys: 
             - jacs-messaging-c1-{{ checksum "build.gradle" }}
-            - jacs-messaging-c1-
 
-      - run: gradle --no-daemon dependencies
+      - run: ./gradlew --no-daemon dependencies
       
       - save_cache:
           key: jacs-messaging-c1-{{ checksum "build.gradle" }}
           paths:
             - ~/.gradle
 
-      - run: gradle --no-daemon jar test
+      - run: ./gradlew --no-daemon jar test
 
       - store_test_results:
           paths: 
             - build/test-results/test
-      
