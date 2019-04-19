@@ -41,7 +41,7 @@ import org.glassfish.jersey.media.multipart.*;
  *
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
-public class TiledMicroscopeRestClient {
+class TiledMicroscopeRestClient {
 
     private static final Logger log = LoggerFactory.getLogger(TiledMicroscopeRestClient.class);
 
@@ -51,7 +51,7 @@ public class TiledMicroscopeRestClient {
     private final Client client;
     private String REMOTE_API_URL;
 
-    public TiledMicroscopeRestClient(String REMOTE_API_URL) {
+    TiledMicroscopeRestClient(String REMOTE_API_URL) {
         log.info("Using server URL: {}",REMOTE_API_URL);
         this.REMOTE_API_URL = REMOTE_API_URL;
         JacksonJsonProvider provider = new JacksonJaxbJsonProvider();
@@ -80,18 +80,18 @@ public class TiledMicroscopeRestClient {
         client.register(MultiPartFeature.class);
     }
 
-    public WebTarget getMouselightEndpoint(String suffix, String subjectKey) {
+    WebTarget getMouselightEndpoint(String suffix, String subjectKey) {
         log.info("Endpoint target: {}", REMOTE_API_URL + REMOTE_MOUSELIGHT_DATA_PREFIX + suffix);
         return client.target(REMOTE_API_URL + REMOTE_MOUSELIGHT_DATA_PREFIX + suffix)
                 .queryParam("subjectKey", subjectKey);
     }
 
-    public WebTarget getDomainPermissionsEndpoint() {
+    WebTarget getDomainPermissionsEndpoint() {
         log.info("Endpoint target: {}", REMOTE_API_URL + REMOTE_DOMAIN_PERMISSIONS_PREFIX);
         return client.target(REMOTE_API_URL + REMOTE_DOMAIN_PERMISSIONS_PREFIX);
     }
 
-    public List<TmNeuronMetadata> getNeuronMetadata(List<String> neuronIds, String subjectKey) throws Exception {
+    List<TmNeuronMetadata> getNeuronMetadata(List<String> neuronIds, String subjectKey) throws Exception {
         String parsedNeuronIds = StringUtils.join(neuronIds, ",");
         Response response = getMouselightEndpoint("/neuron/metadata", subjectKey)
                 .queryParam("neuronIds", parsedNeuronIds)
@@ -106,7 +106,7 @@ public class TiledMicroscopeRestClient {
         return list;
     }
 
-    public TmNeuronMetadata createMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
+    TmNeuronMetadata createMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
         FormDataMultiPart multiPart = new FormDataMultiPart()
                 .field("neuronMetadata", neuronMetadata, MediaType.APPLICATION_JSON_TYPE);
         Response response = getMouselightEndpoint("/workspace/neuron",subjectKey)
@@ -120,7 +120,7 @@ public class TiledMicroscopeRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
-    public TmSample getSampleForWorkspace(Long workspaceId, String subjectKey) throws Exception {
+    TmSample getSampleForWorkspace(Long workspaceId, String subjectKey) throws Exception {
         log.info("Workspace request on {}", workspaceId);
         Response response = getMouselightEndpoint("/workspace/{workspaceId}", subjectKey)
                 .resolveTemplate("workspaceId", workspaceId)
@@ -149,7 +149,7 @@ public class TiledMicroscopeRestClient {
         return response.readEntity(TmSample.class);
     }
 
-    public TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, InputStream protobufStream,  String subjectKey) throws Exception {
+    TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, InputStream protobufStream,  String subjectKey) throws Exception {
         FormDataMultiPart multiPart = new FormDataMultiPart()
                 .field("neuronMetadata", neuronMetadata, MediaType.APPLICATION_JSON_TYPE)
                 .field("protobufBytes", protobufStream, MediaType.APPLICATION_OCTET_STREAM_TYPE);
@@ -164,18 +164,18 @@ public class TiledMicroscopeRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
-    public TmNeuronMetadata updateMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
+    TmNeuronMetadata updateMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
         return update(neuronMetadata, null, subjectKey);
     }
 
-    public TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, InputStream protobufStream, String subjectKey) throws Exception {
+    TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, InputStream protobufStream, String subjectKey) throws Exception {
        List<TmNeuronMetadata> list = update(Arrays.asList(Pair.of(neuronMetadata, protobufStream)), subjectKey);
        if (list.isEmpty()) return null;
        if (list.size()>1) log.warn("update(TmNeuronMetadata) returned more than one result.");
        return list.get(0);
     }
 
-    public List<TmNeuronMetadata> updateMetadata(List<TmNeuronMetadata> neuronList, String subjectKey) throws Exception {
+    List<TmNeuronMetadata> updateMetadata(List<TmNeuronMetadata> neuronList, String subjectKey) throws Exception {
         List<Pair<TmNeuronMetadata,InputStream>> pairs = new ArrayList<>();
         for(TmNeuronMetadata tmNeuronMetadata : neuronList) {
             pairs.add(Pair.of(tmNeuronMetadata, (InputStream)null));
@@ -183,7 +183,7 @@ public class TiledMicroscopeRestClient {
         return update(pairs, subjectKey);
     }
 
-    public List<TmNeuronMetadata> update(Collection<Pair<TmNeuronMetadata,InputStream>> neuronPairs, String subjectKey) throws Exception {
+    List<TmNeuronMetadata> update(Collection<Pair<TmNeuronMetadata,InputStream>> neuronPairs, String subjectKey) throws Exception {
         if (neuronPairs.isEmpty()) return Collections.emptyList();
         MultiPart multiPartEntity = new MultiPart();
         for (Pair<TmNeuronMetadata, InputStream> neuronPair : neuronPairs) {
@@ -218,7 +218,7 @@ public class TiledMicroscopeRestClient {
         return list;
     }
     
-    public void remove(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
+    void remove(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
                 .queryParam("neuronId", neuronMetadata.getId())
                 .request()
@@ -230,7 +230,7 @@ public class TiledMicroscopeRestClient {
         }
     }
 
-    public TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) throws Exception {
+    TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) throws Exception {
         Map<String, Object> params = new HashMap<>();
         params.put("targetClass", TmNeuronMetadata.class.getName());
         params.put("targetId", neuron.getId());
@@ -239,6 +239,7 @@ public class TiledMicroscopeRestClient {
         params.put("subjectKey", subjectKey);
         Response response = getDomainPermissionsEndpoint()
                 .request("application/json")
+                .header("username", subjectKey)
                 .put(Entity.json(params));
         if (checkBadResponse(response.getStatus(), "problem making request changePermissions to server: " + neuron + "," + newOwner)) {
             response.close();
@@ -247,7 +248,7 @@ public class TiledMicroscopeRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
-    protected boolean checkBadResponse(Response response, String failureError) {
+    private boolean checkBadResponse(Response response, String failureError) {
         int responseStatus = response.getStatus();
         Response.Status status = Response.Status.fromStatusCode(response.getStatus());
         if (responseStatus<200 || responseStatus>=300) {
@@ -259,7 +260,7 @@ public class TiledMicroscopeRestClient {
         return false;
     }
 
-    protected boolean checkBadResponse(int responseStatus, String failureError) {
+    private boolean checkBadResponse(int responseStatus, String failureError) {
         if (responseStatus<200 || responseStatus>=300) {
             log.error("ERROR RESPONSE: " + responseStatus);
             log.error(failureError);

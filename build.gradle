@@ -17,7 +17,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'org.hidetake.ssh'
 
 group 'org.janelia.jacs-messaging'
-version '1.1.0'
+version '1.2.0'
 
 remotes {
     messageServer {
