@@ -1,271 +1,54 @@
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath 'org.hidetake:gradle-ssh-plugin:2.9.0'
-    }
-}
-
 plugins {
     id "com.github.hierynomus.license" version "0.15.0"
 }
 
-apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'maven-publish'
-apply plugin: 'org.hidetake.ssh'
-
-group 'org.janelia.jacs-messaging'
-version '1.2.0'
-
-remotes {
-    messageServer {
-        role('messageServer')
-        host = 'c13u05'
-        user = '' // user needs access on c13u05
-        password = ''
-    }
+allprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+    group = 'org.janelia.jacs-messaging'
+    version = '1.3.0-SNAPSHOT'
 }
 
-def neuronBrokerOptions = [
-    messageServer:'c13u05',
-    persistenceServer:'http://jacs:8180/rest-v2/',
-    receiveQueue: 'UpdatesProcessor',
-    sendQueue:'ModelRefresh',
-    errorQueue:'ModelErrors',
-    appUser: 'admin',  // admin user on rabbitmq instance
-    appPassword: '',
-    systemOwner: 'group:mouselight',
-    backupQueue: 'ClientRefresh',
-    backupLocation: '/opt/neuronBroker/backup/backupQueue'
-]
+subprojects {
+    apply from: "${rootDir}/deps.gradle"
 
-def neuronBrokerJar = "sharedWorkspaceBroker-${version}.jar"
-def targetLoc = "/opt/neuronBroker/${neuronBrokerJar}"
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-    mavenLocal()
-    maven {
-        url "https://nexus.janelia.org/repository/maven-releases"
-    }
-    maven {
-        url "https://nexus.janelia.org/repository/maven-snapshots"
-    }
-}
-
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
-    archiveClassifier = 'sources'
-}
-
-task brokerJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'Shared Workspace Broker',
-                'Implementation-Version': version,
-                'Main-Class': 'org.janelia.messaging.broker.sharedworkspace.NeuronBroker'
-    }
-    baseName = 'sharedWorkspaceBroker'
-    from {
-        configurations.compile.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-        configurations.runtime.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
-    with jar
-}
-
-task neuronGenerationJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'Neuron Generation Bot',
-                'Implementation-Version': version,
-                'Main-Class': 'org.janelia.messaging.utility.bot.neurongenerator.NeuronGenerationBot'
-    }
-    baseName = 'NeuronGenerationBot'
-    from {
-        configurations.compile.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-        configurations.runtime.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
-    with jar
-}
-
-task queueBackupQueryJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'Queue Backup Query Utility',
-                'Implementation-Version': version,
-                'Main-Class': 'org.janelia.messaging.utility.BackupQueueDownload'
-    }
-    baseName = 'UserRecovery'
-    from {
-        configurations.compile.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-        configurations.runtime.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
-    with jar
-}
-
-task userRecoveryJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'User Message Recovery Utility',
-                'Implementation-Version': version,
-                'Main-Class': 'org.janelia.messaging.utility.NeuronRecoveryUtility'
-    }
-    baseName = 'NeuronRecoveryUtility'
-    from {
-        configurations.compile.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-        configurations.runtime.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
-    with jar
-}
-
-dependencies {
-    testCompile(
-            'junit:junit:4.12',
-            'org.codehaus.groovy:groovy-all:2.3.11',
-            'org.spockframework:spock-core:1.0-groovy-2.3',
-            'cglib:cglib-nodep:2.2',
-            'org.objenesis:objenesis:1.2'
-    )
-    compile group: 'org.janelia.jacs-model', name: 'jacs-model-core', version: '2.0.2'
-    compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.5.1'
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
-
-    project.ext {
-        JACKSON_VERSION = '2.9.5'
-        JERSEY_VERSION = "2.27"
-        SLF4J_VERSION = "1.7.26"
-    }
-
-    // Jackson deps
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: "${JACKSON_VERSION}"
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: "${JACKSON_VERSION}"
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "${JACKSON_VERSION}"
-    compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-base', version: "${JACKSON_VERSION}"
-    compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: "${JACKSON_VERSION}"
-
-    compile group: 'javax.ws.rs', name: 'javax.ws.rs-api', version: '2.1'
-
-    // Jersey deps
-    compile group: 'org.glassfish.jersey.core', name: 'jersey-common', version: "${JERSEY_VERSION}"
-    compile group: 'org.glassfish.jersey.core', name: 'jersey-client', version: "${JERSEY_VERSION}"
-    compile group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: "${JERSEY_VERSION}"
-    compile group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version: "${JERSEY_VERSION}"
-    compile group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: "${JERSEY_VERSION}"
-
-    compile group: 'com.sun.media', name: 'jai-codec', version: '1.1.3'
-    compile group: 'javax.media', name: 'jai-core', version: '1.1.3'
-    compile group: 'org.slf4j', name: 'slf4j-api', version: "${SLF4J_VERSION}"
-    compile group: 'org.komamitsu', name: 'jackson-dataformat-msgpack', version: '0.0.3'
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.1'
-    compile group: 'org.glassfish.jersey.connectors', name: 'jersey-apache-connector', version: '2.22'
-
-    runtime group: 'org.slf4j', name: 'slf4j-log4j12', version: "${SLF4J_VERSION}"
-}
-
-task startRabbit {
-    doLast {
-        ssh.run {
-            session(remotes.role('messageServer')) {
-                executeSudo '/sbin/service rabbitmq-server start', pty: true
+    afterEvaluate {
+        repositories {
+            mavenLocal()
+            mavenCentral()
+            maven {
+                url "https://nexus.janelia.org/repository/maven-releases"
+            }
+            maven {
+                url "https://nexus.janelia.org/repository/maven-snapshots"
             }
         }
-    }
-}
 
-task stopRabbit {
-    doLast {
-        ssh.run {
-            session(remotes.role('messageServer')) {
-                executeSudo '/sbin/service rabbitmq-server stop', pty: true
+        compileJava {
+            doFirst {
+                options.compilerArgs = [
+                        '-Xlint:deprecation',
+                        '-Xlint:unchecked'
+                ]
             }
         }
-    }
-}
 
-task deployNeuronBroker (dependsOn: brokerJar) {
-    doLast {
-        ssh.run {
-            session(remotes.role('messageServer')) {
-                executeSudo 'kill -9 `ps -aef | grep \'sharedWorkspace\' | awk \'{print $2}\'`', ignoreError: true,
-                        pty: true
-                put from: "${buildDir}/libs/${neuronBrokerJar}", into: targetLoc
-                def cmdOptions = "-ms ${neuronBrokerOptions.messageServer} -ps ${neuronBrokerOptions.persistenceServer} " +
-                        "-rec ${neuronBrokerOptions.receiveQueue} -send ${neuronBrokerOptions.sendQueue} " +
-                        "-error ${neuronBrokerOptions.errorQueue} -systemOwner ${neuronBrokerOptions.systemOwner} " +
-                        "-u ${neuronBrokerOptions.appUser} -p ${neuronBrokerOptions.appPassword} " +
-                        "-backupQueue ${neuronBrokerOptions.backupQueue} -backupLocation ${neuronBrokerOptions.backupLocation} "
-                println cmdOptions
-                executeBackground "nohup sh -c '( ( java -jar /opt/neuronBroker/sharedWorkspaceBroker-1.0.jar ${cmdOptions} ) & )'", pty: true
-
+        compileTestJava {
+            doFirst {
+                options.compilerArgs = [
+                        '-Xlint:deprecation',
+                        '-Xlint:unchecked'
+                ]
             }
         }
+
     }
+
 }
 
-task stopNeuronBroker (dependsOn: brokerJar) {
-    doLast {
-        ssh.run {
-            session(remotes.role('messageServer')) {
-                executeSudo 'kill -9 `ps -aef | grep \'sharedWorkspace\' | awk \'{print $2}\'`', ignoreError: true,
-                        pty: true
-            }
-        }
-    }
-}
-
-artifacts {
-    archives brokerJar
-    archives neuronGenerationJar
-}
-
-publishing {
-    publications {
-        mavenJar(MavenPublication) {
-            from components.java
-            artifact sourceJar
-        }
-    }
-    ext {
-        if (!project.hasProperty('mavenRepoUser')) {
-            mavenRepoUser = ''
-        }
-        if (!project.hasProperty('mavenRepoPassword')) {
-            mavenRepoPassword = ''
-        }
-    }
-    repositories {
-        maven {
-            def releasesRepoUrl = 'https://nexus.janelia.org/repository/maven-releases'
-            def snapshotsRepoUrl = 'https://nexus.janelia.org/repository/maven-snapshots'
-            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
-            credentials {
-                username "${mavenRepoUser}"
-                password "${mavenRepoPassword}"
-            }
-        }
-    }
-}
-
-task updateWrapper(type: Wrapper) {
-    gradleVersion = "5.1.1"
-}
 
 license {
     header rootProject.file('LICENSE.md')
@@ -273,6 +56,11 @@ license {
 }
 
 downloadLicenses {
-        includeProjectDependencies = true
-        dependencyConfiguration = 'compile'
+    includeProjectDependencies = true
+    dependencyConfiguration = 'compile'
 }
+
+task updateWrapper(type: Wrapper) {
+    gradleVersion = "5.1.1"
+}
+

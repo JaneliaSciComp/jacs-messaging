@@ -1,0 +1,13 @@
+project(":jacs-messaging-neuronbroker") {
+    dependencies {
+        implementation project(":jacs-messaging-core"),
+                       CMDLINE_ARG_LIB,
+                       JACKSON_DATABIND_LIB,
+                       JACKSON_JAXRS_JSON_PROVIDER,
+                       JACS_MODEL_CORE_LIB,
+                       JAX_RS_JERSEY_CLIENT_LIB,
+                       JAX_RS_JERSEY_APACHE_CONNECTOR_LIB,
+                       JAX_RS_JERSEY_MEDIA_JSON_LIB,
+                       JAX_RS_JERSEY_MEDIA_LIB
+    }
+}

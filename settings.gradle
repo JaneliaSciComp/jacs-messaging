@@ -1,2 +1,4 @@
 rootProject.name = 'jacs-messaging'
 
+include 'jacs-messaging-core'
+include 'jacs-messaging-neuronbroker'

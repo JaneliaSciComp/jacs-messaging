@@ -1,0 +1,6 @@
+project(":jacs-messaging-core") {
+    dependencies {
+        api RABBITMQ_CLIENT_LIB,
+            JACKSON_ANNOTATIONS_LIB
+    }
+}
