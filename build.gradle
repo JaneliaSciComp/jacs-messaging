@@ -6,7 +6,7 @@ allprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     group = 'org.janelia.jacs-messaging'
-    version = '1.3.0-SNAPSHOT'
+    version = '2.0.0-SNAPSHOT'
 }
 
 subprojects {
