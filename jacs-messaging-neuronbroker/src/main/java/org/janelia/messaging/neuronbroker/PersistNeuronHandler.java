@@ -29,18 +29,18 @@ class PersistNeuronHandler implements DeliverCallback {
 
     private final TiledMicroscopeDomainMgr domainMgr;
     private final String sharedWorkspaceSystemOwner;
-    private final MessageSender refreshNotifier;
-    private final MessageSender errorNotifier;
+    private final MessageSender replySuccessSender;
+    private final MessageSender replyErrorSender;
     private final ObjectMapper objectMapper;
 
     PersistNeuronHandler(TiledMicroscopeDomainMgr domainMgr,
                          @Nonnull String sharedWorkspaceSystemOwner,
-                         MessageSender refreshNotifier,
-                         MessageSender errorNotifier) {
+                         MessageSender replySuccessSender,
+                         MessageSender replyErrorSender) {
         this.domainMgr = domainMgr;
         this.sharedWorkspaceSystemOwner = sharedWorkspaceSystemOwner;
-        this.refreshNotifier = refreshNotifier;
-        this.errorNotifier = errorNotifier;
+        this.replySuccessSender = replySuccessSender;
+        this.replyErrorSender = replyErrorSender;
         this.objectMapper = new ObjectMapper();
     }
 
@@ -57,7 +57,7 @@ class PersistNeuronHandler implements DeliverCallback {
             if (neuronMetadata != null) {
                 switch (action) {
                     case NEURON_DELETE:
-                        handleDeleteNeuron(msgHeaders, neuronMetadata, user, neuron -> refreshNotifier.sendMessage(msgHeaders, message.getBody()));
+                        handleDeleteNeuron(msgHeaders, neuronMetadata, user, neuron -> replySuccessSender.sendMessage(msgHeaders, message.getBody()));
                         break;
                     case NEURON_CREATE:
                     case NEURON_SAVE_NEURONDATA:
@@ -70,8 +70,8 @@ class PersistNeuronHandler implements DeliverCallback {
                             try {
                                 Map<String, Object> notifHeaders = newMessageHeaders(msgHeaders,
                                         ImmutableMap.of(NeuronMessageHeaders.METADATA, objectMapper.writeValueAsString(neuron)));
-                                LOG.info("Sending out broadcast refresh for persisted neuron {}", neuron);
-                                refreshNotifier.sendMessage(notifHeaders, message.getBody());
+                                LOG.info("Sending out broadcast refresh for persisted neuron with body {}", neuron);
+                                replySuccessSender.sendMessage(notifHeaders, message.getBody());
                             } catch (Exception e) {
                                 throw new IllegalStateException(e);
                             }
@@ -87,8 +87,8 @@ class PersistNeuronHandler implements DeliverCallback {
                             try {
                                 Map<String, Object> notifHeaders = newMessageHeaders(msgHeaders,
                                         ImmutableMap.of(NeuronMessageHeaders.METADATA, objectMapper.writeValueAsString(neuron)));
-                                LOG.info("Sending out broadcast refresh for persisted neuron {}", neuron);
-                                refreshNotifier.sendMessage(notifHeaders, message.getBody());
+                                LOG.info("Sending out broadcast refresh for persisted neuron metadata {}", neuron);
+                                replySuccessSender.sendMessage(notifHeaders, message.getBody());
                             } catch (Exception e) {
                                 throw new IllegalStateException(e);
                             }
@@ -145,8 +145,8 @@ class PersistNeuronHandler implements DeliverCallback {
 
     private void fireErrorMessage(Map<String, Object> msgHeaders, String errorMessage) {
         Map<String, Object> errorNotifHeaders = newMessageHeaders(msgHeaders, ImmutableMap.of(NeuronMessageHeaders.TYPE, MessageType.ERROR_PROCESSING.name()));
-        refreshNotifier.sendMessage(errorNotifHeaders, errorMessage.getBytes());
-        errorNotifier.sendMessage(errorNotifHeaders, errorMessage.getBytes());
+        replySuccessSender.sendMessage(errorNotifHeaders, errorMessage.getBytes());
+        replyErrorSender.sendMessage(errorNotifHeaders, errorMessage.getBytes());
     }
 
     private Map<String, Object> newMessageHeaders(Map<String, Object> msgHeaders, Map<String, Object> overridenHeaders) {
@@ -290,7 +290,7 @@ class PersistNeuronHandler implements DeliverCallback {
         msgHeaders.put(NeuronMessageHeaders.METADATA, metadata);
 
         LOG.info("Sending out neuron ownership message for neuron ID: {} with {}", neuron.getId(), msgHeaders);
-        refreshNotifier.sendMessage(msgHeaders, " ".getBytes());
+        replySuccessSender.sendMessage(msgHeaders, " ".getBytes());
     }
 
 }
