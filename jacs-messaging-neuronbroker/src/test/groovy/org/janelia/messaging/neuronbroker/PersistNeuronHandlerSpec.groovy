@@ -35,7 +35,7 @@ class PersistNeuronHandlerSpec extends Specification {
         ObjectMapper mapper = new ObjectMapper();
         metadataObj = mapper.readValue(metadataStr, TmNeuronMetadata.class);
 
-        domainMgr = Stub(TiledMicroscopeDomainMgr.class);
+        domainMgr = Mock(TiledMicroscopeDomainMgr.class);
         replySuccessSender = Mock(MessageSender.class);
         replyErrorSender = Mock(MessageSender.class);
         persistNeuronHandler = new PersistNeuronHandler(
@@ -67,6 +67,8 @@ class PersistNeuronHandlerSpec extends Specification {
         persistNeuronHandler.handle("", testMessage)
 
         then:
+        1 * domainMgr.save(_, _, _)
+        0 * domainMgr.saveMetadata(_, _)
         1 * replySuccessSender.sendMessage(_, _)
         0 * replyErrorSender.sendMessage(_, _)
     }
@@ -86,14 +88,12 @@ class PersistNeuronHandlerSpec extends Specification {
         testMessage.getProperties() >> properties
         testMessage.getBody() >> msgBody
 
-        and:
-        domainMgr.save(_,_,_) >> { throw new IllegalStateException("Error") }
-        domainMgr.saveMetadata(_,_) >> { throw new IllegalStateException("Error") }
-
         when:
         persistNeuronHandler.handle("", testMessage)
 
         then:
+        0 * domainMgr.save(_, _, _)
+        0 * domainMgr.saveMetadata(_, _)
         0 * replySuccessSender.sendMessage(_, _)
         0 * replyErrorSender.sendMessage(_, _)
     }
@@ -114,15 +114,38 @@ class PersistNeuronHandlerSpec extends Specification {
         testMessage.getBody() >> msgBody
 
         and:
-        domainMgr.save(_,_,_) >> { throw new IllegalStateException("Error") }
-
-        and:
         domainMgr.saveMetadata(_,_) >> metadataObj
 
         when:
         persistNeuronHandler.handle("", testMessage)
 
         then:
+        0 * domainMgr.save(_, _, _)
+        1 * domainMgr.saveMetadata(_, _)
+        1 * replySuccessSender.sendMessage(_, _)
+        0 * replyErrorSender.sendMessage(_, _)
+    }
+
+    def "delete neuron"() {
+        given:
+        def msgHeader = [ (NeuronMessageHeaders.USER) : LongStringHelper.asLongString("user:testuser1"),
+                          (NeuronMessageHeaders.NEURONIDS) : ["2468630633941827729"],
+                          (NeuronMessageHeaders.WORKSPACE) : LongStringHelper.asLongString("2463496977254449297"),
+                          (NeuronMessageHeaders.TYPE) : LongStringHelper.asLongString("NEURON_DELETE"),
+                          (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(metadataStr)
+        ]
+        def msgBody = "This is the message body".bytes
+        def properties = Stub(AMQP.BasicProperties)
+        properties.getHeaders() >> msgHeader
+        def testMessage = Stub(Delivery.class)
+        testMessage.getProperties() >> properties
+        testMessage.getBody() >> msgBody
+
+        when:
+        persistNeuronHandler.handle("", testMessage)
+
+        then:
+        1 * domainMgr.remove(_,"user:testuser1")
         1 * replySuccessSender.sendMessage(_, _)
         0 * replyErrorSender.sendMessage(_, _)
     }
