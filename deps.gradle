@@ -5,12 +5,13 @@ dependencies {
         SLF4J_LIB = "org.slf4j:slf4j-api:${SLF4J_VERSION}"
         SLF4J_LOG4J_LIB = "org.slf4j:slf4j-log4j12:${SLF4J_VERSION}"
 
+        CMDLINE_ARG_LIB = "com.beust:jcommander:1.72"
+
         GUAVA_LIB = "com.google.guava:guava:26.0-jre"
 
         // apache commons
         COMMONS_LANG_VERSION = "3.8.1"
         COMMONS_LANG_LIB = "org.apache.commons:commons-lang3:${COMMONS_LANG_VERSION}"
-        CMDLINE_ARG_LIB = "commons-cli:commons-cli:1.4"
 
         // rabbitmq
         RABBITMQ_VERSION = "5.5.1"
