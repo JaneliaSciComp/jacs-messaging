@@ -1,4 +1,4 @@
-project(":jacs-messaging-neuronbroker") {
+project(":jacs-messaging-broker") {
     dependencies {
         implementation project(":jacs-messaging-core"),
                        CMDLINE_ARG_LIB,
