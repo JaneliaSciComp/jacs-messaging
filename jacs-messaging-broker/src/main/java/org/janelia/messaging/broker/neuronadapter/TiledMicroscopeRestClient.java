@@ -1,4 +1,4 @@
-package org.janelia.messaging.neuronbroker;
+package org.janelia.messaging.broker.neuronadapter;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;

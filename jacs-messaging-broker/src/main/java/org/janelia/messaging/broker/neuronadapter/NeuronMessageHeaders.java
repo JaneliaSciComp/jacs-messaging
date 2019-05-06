@@ -1,4 +1,4 @@
-package org.janelia.messaging.neuronbroker;
+package org.janelia.messaging.broker.neuronadapter;
 
 /**
  * Created by schauderd on 11/14/17.

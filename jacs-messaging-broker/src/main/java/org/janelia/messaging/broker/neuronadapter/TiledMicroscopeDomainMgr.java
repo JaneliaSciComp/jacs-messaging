@@ -1,4 +1,4 @@
-package org.janelia.messaging.neuronbroker;
+package org.janelia.messaging.broker.neuronadapter;
 
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;

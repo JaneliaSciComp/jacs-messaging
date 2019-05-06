@@ -1,4 +1,14 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.hidetake:gradle-ssh-plugin:2.10.1'
+    }
+}
+
 project(":jacs-messaging-broker") {
+
     dependencies {
         implementation project(":jacs-messaging-core"),
                        CMDLINE_ARG_LIB,
@@ -9,5 +19,102 @@ project(":jacs-messaging-broker") {
                        JAX_RS_JERSEY_APACHE_CONNECTOR_LIB,
                        JAX_RS_JERSEY_MEDIA_JSON_LIB,
                        JAX_RS_JERSEY_MEDIA_LIB
+    }
+
+}
+
+apply plugin: 'org.hidetake.ssh'
+
+remotes {
+    messageServer {
+        role('messageServer')
+        host = ''
+        user = ''
+        password = ''
+    }
+}
+
+def neuronBrokerBaseName = "sharedWorkspaceBroker"
+
+task brokerJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
+    manifest {
+        attributes 'Implementation-Title': 'Shared Workspace Broker',
+                'Implementation-Version': version,
+                'Main-Class': 'org.janelia.messaging.broker.MessageBroker'
+    }
+    archiveBaseName = "${neuronBrokerBaseName}"
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    with jar
+}
+
+task startRabbit {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo '/sbin/service rabbitmq-server start', pty: true
+            }
+        }
+    }
+}
+
+task stopRabbit {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo '/sbin/service rabbitmq-server stop', pty: true
+            }
+        }
+    }
+}
+
+def neuronBrokerOptions = [
+        messageServer:'c13u05',
+        persistenceServer:'http://jacs:8180/rest-v2/',
+        receiveQueue: 'UpdatesProcessor',
+        sendQueue:'ModelRefresh',
+        errorQueue:'ModelErrors',
+        appUser: 'admin',  // admin user on rabbitmq instance
+        appPassword: '',
+        systemOwner: 'group:mouselight',
+        backupQueue: 'ClientRefresh',
+        backupLocation: '/opt/neuronBroker/backup/backupQueue'
+]
+
+task deployNeuronBroker (dependsOn: brokerJar) {
+    def neuronBrokerJar = "${neuronBrokerBaseName}-${version}.jar"
+    def targetLoc = "/opt/neuronBroker/${neuronBrokerJar}"
+
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo "kill -9 `ps -aef | grep '${neuronBrokerBaseName}' | awk '{print \$2}'`",
+                        ignoreError: true,
+                        pty: true
+                put from: "${buildDir}/libs/${neuronBrokerJar}", into: targetLoc
+                def cmdOptions = "-ms ${neuronBrokerOptions.messageServer} -ps ${neuronBrokerOptions.persistenceServer} " +
+                        "-rec ${neuronBrokerOptions.receiveQueue} -send ${neuronBrokerOptions.sendQueue} " +
+                        "-error ${neuronBrokerOptions.errorQueue} -systemOwner ${neuronBrokerOptions.systemOwner} " +
+                        "-u ${neuronBrokerOptions.appUser} -p ${neuronBrokerOptions.appPassword} " +
+                        "-backupQueue ${neuronBrokerOptions.backupQueue} -backupLocation ${neuronBrokerOptions.backupLocation} "
+                println cmdOptions
+                executeBackground "nohup sh -c '( ( java -jar /opt/neuronBroker/${neuronBrokerJar} ${cmdOptions} ) & )'", pty: true
+            }
+        }
+    }
+}
+
+task stopNeuronBroker (dependsOn: brokerJar) {
+    doLast {
+        ssh.run {
+            session(remotes.role('messageServer')) {
+                executeSudo "kill -9 `ps -aef | grep '${neuronBrokerBaseName}' | awk '{print \$2}'`", 
+                        ignoreError: true,
+                        pty: true
+            }
+        }
     }
 }

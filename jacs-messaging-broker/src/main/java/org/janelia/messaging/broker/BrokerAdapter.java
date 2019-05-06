@@ -1,4 +1,4 @@
-package org.janelia.messaging;
+package org.janelia.messaging.broker;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;

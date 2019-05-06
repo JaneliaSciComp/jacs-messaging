@@ -1,4 +1,4 @@
-package org.janelia.messaging.neuronbroker;
+package org.janelia.messaging.broker.neuronadapter;
 
 import com.rabbitmq.client.CancelCallback;
 import org.slf4j.Logger;

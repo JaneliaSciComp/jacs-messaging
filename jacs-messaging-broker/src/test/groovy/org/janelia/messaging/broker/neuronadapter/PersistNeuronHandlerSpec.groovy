@@ -1,4 +1,4 @@
-package org.janelia.messaging.neuronbroker
+package org.janelia.messaging.broker.neuronadapter
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rabbitmq.client.AMQP

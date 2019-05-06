@@ -1,10 +1,10 @@
-package org.janelia.messaging.neuronbroker;
+package org.janelia.messaging.broker.neuronadapter;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.collect.ImmutableSet;
 import com.rabbitmq.client.CancelCallback;
 import com.rabbitmq.client.DeliverCallback;
-import org.janelia.messaging.BrokerAdapter;
+import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.core.MessageSender;
 
 import java.util.Set;

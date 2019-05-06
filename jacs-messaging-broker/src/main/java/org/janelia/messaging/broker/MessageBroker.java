@@ -1,4 +1,4 @@
-package org.janelia.messaging;
+package org.janelia.messaging.broker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.janelia.messaging.core.ConnectionManager;
@@ -7,7 +7,7 @@ import org.janelia.messaging.core.MessageConsumer;
 import org.janelia.messaging.core.MessageFilter;
 import org.janelia.messaging.core.MessageSender;
 import org.janelia.messaging.core.OnDemandMessageConsumer;
-import org.janelia.messaging.neuronbroker.NeuronBrokerAdapter;
+import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
