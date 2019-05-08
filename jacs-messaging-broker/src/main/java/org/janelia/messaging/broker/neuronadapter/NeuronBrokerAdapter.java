@@ -35,10 +35,10 @@ public class NeuronBrokerAdapter extends BrokerAdapter {
     @Override
     public Set<String> getMessageHeaders() {
         return ImmutableSet.of(
-                NeuronMessageHeaders.USER,
-                NeuronMessageHeaders.WORKSPACE,
-                NeuronMessageHeaders.TYPE,
-                NeuronMessageHeaders.METADATA
+                HeaderConstants.USER,
+                HeaderConstants.WORKSPACE,
+                HeaderConstants.TYPE,
+                HeaderConstants.METADATA
         );
     }
 }

@@ -80,11 +80,11 @@ class PersistNeuronHandlerSpec extends Specification {
     def "save neuron with body"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser1"),
-                (NeuronMessageHeaders.NEURONIDS): ["2468630633941827729"],
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("NEURON_SAVE_NEURONDATA"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:testuser1"),
+                (HeaderConstants.NEURONIDS): ["2468630633941827729"],
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("NEURON_SAVE_NEURONDATA"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
         ]
         def user1Neuron = mapper.readValue(user1NeuronJson, TmNeuronMetadata.class);
         def msgBody = "This is the message body".bytes
@@ -110,11 +110,11 @@ class PersistNeuronHandlerSpec extends Specification {
     def "nothing happens when neuron owner and user are different"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:otheruser"),
-                (NeuronMessageHeaders.NEURONIDS): ["2468630633941827729"],
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("NEURON_SAVE_NEURONDATA"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:otheruser"),
+                (HeaderConstants.NEURONIDS): ["2468630633941827729"],
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("NEURON_SAVE_NEURONDATA"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
         ]
         def msgBody = "This is the message body".bytes
         def properties = Stub(AMQP.BasicProperties)
@@ -136,11 +136,11 @@ class PersistNeuronHandlerSpec extends Specification {
     def "save neuron metadata"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser1"),
-                (NeuronMessageHeaders.NEURONIDS): ["2468630633941827729"],
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("NEURON_SAVE_METADATA"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:testuser1"),
+                (HeaderConstants.NEURONIDS): ["2468630633941827729"],
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("NEURON_SAVE_METADATA"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
         ]
         def user1Neuron = mapper.readValue(user1NeuronJson, TmNeuronMetadata.class);
         def msgBody = "This is the message body".bytes
@@ -166,11 +166,11 @@ class PersistNeuronHandlerSpec extends Specification {
     def "delete neuron"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser1"),
-                (NeuronMessageHeaders.NEURONIDS): ["2468630633941827729"],
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("NEURON_DELETE"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:testuser1"),
+                (HeaderConstants.NEURONIDS): ["2468630633941827729"],
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("NEURON_DELETE"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1NeuronJson)
         ]
         def msgBody = "This is the message body".bytes
         def properties = Stub(AMQP.BasicProperties)
@@ -191,12 +191,12 @@ class PersistNeuronHandlerSpec extends Specification {
     def "approval from owner of neuron to change ownership"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser2"),
-                (NeuronMessageHeaders.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("NEURON_OWNERSHIP_DECISION"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson),
-                (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("true")
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:testuser2"),
+                (HeaderConstants.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("NEURON_OWNERSHIP_DECISION"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1NeuronJson),
+                (HeaderConstants.DECISION) : LongStringHelper.asLongString("true")
         ]
         def user1Neuron = mapper.readValue(user1NeuronJson, TmNeuronMetadata.class);
         def msgBody = "This is the message body".bytes
@@ -213,7 +213,7 @@ class PersistNeuronHandlerSpec extends Specification {
         then: "broadcast approval message sent out and neuron ownership updated"
         1 * replySuccessSender.sendMessage(*_) >> { arguments ->
             final Map<String, Object> msgHeaders = arguments[0]
-            assert msgHeaders[NeuronMessageHeaders.DESCRIPTION] == "Ownership approved by Neuron Owner"
+            assert msgHeaders[HeaderConstants.DESCRIPTION] == "Ownership approved by Neuron Owner"
         }
         1 * domainMgr.saveMetadata(*_) >> { arguments ->
             final TmNeuronMetadata neuron = arguments[0]
@@ -226,12 +226,12 @@ class PersistNeuronHandlerSpec extends Specification {
     def "rejection from owner of neuron to change ownership"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser2"),
-                (NeuronMessageHeaders.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("NEURON_OWNERSHIP_DECISION"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson),
-                (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("false")
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:testuser2"),
+                (HeaderConstants.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("NEURON_OWNERSHIP_DECISION"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(user1NeuronJson),
+                (HeaderConstants.DECISION) : LongStringHelper.asLongString("false")
         ]
         def user1Neuron = mapper.readValue(user1NeuronJson, TmNeuronMetadata.class);
         def msgBody = "This is the message body".bytes
@@ -248,7 +248,7 @@ class PersistNeuronHandlerSpec extends Specification {
         then: "broadcast rejection message sent out"
         1 * replySuccessSender.sendMessage(*_) >> { arguments ->
             final Map<String,Object> msgHeaders = arguments[0]
-            assert msgHeaders[NeuronMessageHeaders.DECISION] == "false"
+            assert msgHeaders[HeaderConstants.DECISION] == "false"
         }
         0 * domainMgr.saveMetadata(_, _)
         0 * replyErrorSender.sendMessage(_, _)
@@ -257,13 +257,13 @@ class PersistNeuronHandlerSpec extends Specification {
     def "assign owner of neuron to another person"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser2"),
-                (NeuronMessageHeaders.TARGET_USER) : LongStringHelper.asLongString("user:testuser4"),
-                (NeuronMessageHeaders.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("REQUEST_NEURON_ASSIGNMENT"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(user1NeuronJson),
-                (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("false")
+                (HeaderConstants.USER)       : LongStringHelper.asLongString("user:testuser2"),
+                (HeaderConstants.TARGET_USER): LongStringHelper.asLongString("user:testuser4"),
+                (HeaderConstants.NEURONIDS)  : LongStringHelper.asLongString("2468630633941827729"),
+                (HeaderConstants.WORKSPACE)  : LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)       : LongStringHelper.asLongString("REQUEST_NEURON_ASSIGNMENT"),
+                (HeaderConstants.METADATA)   : LongStringHelper.asLongString(user1NeuronJson),
+                (HeaderConstants.DECISION)   : LongStringHelper.asLongString("false")
         ]
         def msgBody = "This is the message body".bytes
         def properties = Stub(AMQP.BasicProperties)
@@ -281,8 +281,8 @@ class PersistNeuronHandlerSpec extends Specification {
         then: "broadcast rejection message sent out"
         1 * replySuccessSender.sendMessage(*_) >> { arguments ->
             final Map<String,Object> msgHeaders = arguments[0]
-            assert msgHeaders[NeuronMessageHeaders.TYPE] == "NEURON_OWNERSHIP_DECISION"
-            def newNeuronValue = mapper.readValue(msgHeaders[NeuronMessageHeaders.METADATA], TmNeuronMetadata.class);
+            assert msgHeaders[HeaderConstants.TYPE] == "NEURON_OWNERSHIP_DECISION"
+            def newNeuronValue = mapper.readValue(msgHeaders[HeaderConstants.METADATA], TmNeuronMetadata.class);
             assert newNeuronValue.ownerKey == "user:testuser4"
             assert newNeuronValue.readers.size() == 2
             assert newNeuronValue.writers.size() == 2
@@ -293,12 +293,12 @@ class PersistNeuronHandlerSpec extends Specification {
     def "request ownership of a system neuron"() {
         given:
         def msgHeader = [
-                (NeuronMessageHeaders.USER)     : LongStringHelper.asLongString("user:testuser2"),
-                (NeuronMessageHeaders.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
-                (NeuronMessageHeaders.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
-                (NeuronMessageHeaders.TYPE)     : LongStringHelper.asLongString("REQUEST_NEURON_OWNERSHIP"),
-                (NeuronMessageHeaders.METADATA) : LongStringHelper.asLongString(systemOwnedNeuronJson),
-                (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("false")
+                (HeaderConstants.USER)     : LongStringHelper.asLongString("user:testuser2"),
+                (HeaderConstants.NEURONIDS): LongStringHelper.asLongString("2468630633941827729"),
+                (HeaderConstants.WORKSPACE): LongStringHelper.asLongString("2463496977254449297"),
+                (HeaderConstants.TYPE)     : LongStringHelper.asLongString("REQUEST_NEURON_OWNERSHIP"),
+                (HeaderConstants.METADATA) : LongStringHelper.asLongString(systemOwnedNeuronJson),
+                (HeaderConstants.DECISION) : LongStringHelper.asLongString("false")
         ]
         def systemOwnedNeuron = mapper.readValue(systemOwnedNeuronJson, TmNeuronMetadata.class);
         def msgBody = "This is the message body".bytes
@@ -316,8 +316,8 @@ class PersistNeuronHandlerSpec extends Specification {
         then: "broadcast rejection message sent out"
         1 * replySuccessSender.sendMessage(*_) >> { arguments ->
             final Map<String,Object> msgHeaders = arguments[0]
-            assert msgHeaders[NeuronMessageHeaders.TYPE] == "NEURON_OWNERSHIP_DECISION"
-            def newNeuronValue = mapper.readValue(msgHeaders[NeuronMessageHeaders.METADATA], TmNeuronMetadata.class);
+            assert msgHeaders[HeaderConstants.TYPE] == "NEURON_OWNERSHIP_DECISION"
+            def newNeuronValue = mapper.readValue(msgHeaders[HeaderConstants.METADATA], TmNeuronMetadata.class);
             assert newNeuronValue.ownerKey == "user:testuser2"
             assert newNeuronValue.readers.size() == 1
             assert newNeuronValue.writers.size() == 1
