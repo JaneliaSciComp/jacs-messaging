@@ -18,8 +18,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BackupQueueDownload {
-    private static final Logger LOG = LoggerFactory.getLogger(BackupQueueDownload.class);
+public class QueueBackupTool {
+    private static final Logger LOG = LoggerFactory.getLogger(QueueBackupTool.class);
     private static final int DEFAULT_CONNECT_RETRIES = 1;
 
     @Parameter(names = {"-ms"}, description = "Messaging server", required = true)
@@ -30,15 +30,15 @@ public class BackupQueueDownload {
     String messagingPassword;
     @Parameter(names = {"-filter"}, description = "Message filter")
     String filter;
-    @Parameter(names = {"-backupQueue"}, description = "Backup queue")
-    String backupQueue;
+    @Parameter(names = {"-queueName"}, description = "Name of the queue to download")
+    String queueName;
     @Parameter(names = {"-backupLocation"}, description = "Backup location")
     String backupLocation;
     @Parameter(names = "-h", description = "Display help", arity = 0)
     boolean displayUsage = false;
     int connectRetries = DEFAULT_CONNECT_RETRIES;
 
-    private BackupQueueDownload() {
+    private QueueBackupTool() {
     }
 
     private boolean parseArgs(String[] args) {
@@ -52,7 +52,7 @@ public class BackupQueueDownload {
         }
     }
 
-    private void processQueue() {
+    private void backupQueue() {
         try {
             Path backupLocationPath = Paths.get(backupLocation);
             if (Files.notExists(backupLocationPath) && backupLocationPath.getParent() != null) {
@@ -66,7 +66,7 @@ public class BackupQueueDownload {
 
             BulkMessageConsumer messageConsumer = new BulkMessageConsumer(connManager);
             messageConsumer.setAutoAck(false);
-            messageConsumer.connect(backupQueue, backupQueue, connectRetries);
+            messageConsumer.connect(queueName, queueName, connectRetries);
 
             List<GenericMessage> messageList = messageConsumer.retrieveMessages(null)
                     .collect(Collectors.toList());
@@ -78,14 +78,14 @@ public class BackupQueueDownload {
                 LOG.info("Finished scheduled backup at {} after backing up {} messages", new Date(), messageList.size());
             }
         } catch (Exception e) {
-            LOG.error("Error while backing up queue {} to {}", backupQueue, backupLocation, e);
+            LOG.error("Error while backing up queue {} to {}", queueName, backupLocation, e);
         }
     }
 
     public static void main(String[] args) {
-        BackupQueueDownload queueDownloadTool = new BackupQueueDownload();
-        if (queueDownloadTool.parseArgs(args)) {
-            queueDownloadTool.processQueue();
+        QueueBackupTool queueBackupToolTool = new QueueBackupTool();
+        if (queueBackupToolTool.parseArgs(args)) {
+            queueBackupToolTool.backupQueue();
         }
     }
 

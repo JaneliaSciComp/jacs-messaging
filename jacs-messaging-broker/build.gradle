@@ -56,9 +56,9 @@ task queueBackupJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
     manifest {
         attributes 'Implementation-Title': 'Shared Workspace Backup',
                    'Implementation-Version': version,
-                   'Main-Class': 'org.janelia.messaging.tools.BackupQueueDownload'
+                   'Main-Class': 'org.janelia.messaging.tools.QueueBackupTool'
     }
-    archiveBaseName = "sharedWorkspaceBackup"
+    archiveBaseName = "queueBackup"
     from {
         configurations.runtimeClasspath.collect {
             it.isDirectory() ? it : zipTree(it)
