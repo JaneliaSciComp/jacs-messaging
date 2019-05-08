@@ -29,48 +29,48 @@ public abstract class BrokerAdapter {
     String backupQueue;
     @Parameter(names = {"-backupInterval"}, description = "Interval between two consecutive backups in milliseconds")
     Long backupIntervalInMillis = DEFAULT_BACKUP_INTERVAL_IN_MILLIS;
-    @Parameter(names = {"-backupLocation"}, description = "Backup queue")
+    @Parameter(names = {"-backupLocation"}, description = "Backup location")
     String backupLocation;
     @Parameter(names = "-h", description = "Display help", arity = 0)
     boolean displayUsage = false;
 
-    public String getMessagingServer() {
+    String getMessagingServer() {
         return messagingServer;
     }
 
-    public String getMessagingUser() {
+    String getMessagingUser() {
         return messagingUser;
     }
 
-    public String getMessagingPassword() {
+    String getMessagingPassword() {
         return messagingPassword;
     }
 
-    public int getThreadPoolSize() {
+    int getThreadPoolSize() {
         return DEFAULT_THREADPOOL_SIZE;
     }
 
-    public int getConnectRetries() {
+    int getConnectRetries() {
         return CONNECT_RETRIES;
     }
 
-    public String getReceiveQueue() {
+    String getReceiveQueue() {
         return receiveQueue;
     }
 
-    public String getReplySuccessQueue() {
+    String getReplySuccessQueue() {
         return replySuccessQueue;
     }
 
-    public String getReplyErrorQueue() {
+    String getReplyErrorQueue() {
         return replyErrorQueue;
     }
 
-    public String getBackupQueue() {
+    String getBackupQueue() {
         return backupQueue;
     }
 
-    public String getBackupLocation() {
+    String getBackupLocation() {
         return backupLocation;
     }
 
@@ -80,11 +80,11 @@ public abstract class BrokerAdapter {
 
     public abstract Set<String> getMessageHeaders();
 
-    public long getBackupIntervalInMillis() {
+    long getBackupIntervalInMillis() {
         return backupIntervalInMillis;
     }
 
-    public boolean parseArgs(String[] args) {
+    boolean parseArgs(String[] args) {
         JCommander cmdlineParser = new JCommander(this);
         cmdlineParser.parse(args);
         if (displayUsage) {

@@ -27,7 +27,7 @@ public class ConnectionManager {
         executorService = threadPoolSize > 0 ? Executors.newFixedThreadPool(threadPoolSize) : null;
     }
 
-    public Channel openChannel(int retries) throws Exception {
+    Channel openChannel(int retries) throws Exception {
         int retry = 0;
         Connection conn;
         for (;;) {

@@ -54,6 +54,8 @@ abstract class AbstractMessageConsumer {
                 channel.close();
             } catch (Exception e) {
                 LOG.error("Error disconnecting from the exchange channel {}", this.queue, e);
+            } finally {
+                channel = null;
             }
         }
     }

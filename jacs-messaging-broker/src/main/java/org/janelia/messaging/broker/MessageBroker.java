@@ -1,13 +1,12 @@
 package org.janelia.messaging.broker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapter;
 import org.janelia.messaging.core.ConnectionManager;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageConsumer;
-import org.janelia.messaging.core.MessageFilter;
 import org.janelia.messaging.core.MessageSender;
-import org.janelia.messaging.core.OnDemandMessageConsumer;
-import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapter;
+import org.janelia.messaging.core.BulkMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,10 +15,10 @@ import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Created by schauderd on 11/2/17.
@@ -80,26 +79,17 @@ public class MessageBroker {
             try {
                 LOG.info ("starting scheduled backup to {}", currentBackupLocation);
                 ObjectMapper mapper = new ObjectMapper();
-                OnDemandMessageConsumer consumer = new OnDemandMessageConsumer(connManager);
+                BulkMessageConsumer consumer = new BulkMessageConsumer(connManager);
                 consumer.connect(
                         brokerAdapter.getBackupQueue(),
                         brokerAdapter.getBackupQueue(),
                         brokerAdapter.getConnectRetries());
                 consumer.setAutoAck(true);
-                List<GenericMessage> messageList = consumer.retrieveMessages(new MessageFilter() {
-                    @Override
-                    public Set<String> getHeaderNames() {
-                        return brokerAdapter.getMessageHeaders();
-                    }
-
-                    @Override
-                    public boolean acceptMessage(GenericMessage message) {
-                        return true;
-                    }
-                }, -1);
+                List<GenericMessage> messageList = consumer.retrieveMessages(brokerAdapter.getMessageHeaders())
+                        .collect(Collectors.toList());
                 LOG.info("Retrieved {} messages to backup at {}", messageList.size(), currentBackupLocation);
                 try (OutputStream backupStream = new FileOutputStream(currentBackupLocation)) {
-                    mapper.writeValue(backupStream, consumer);
+                    mapper.writeValue(backupStream, messageList);
                     LOG.info("Finished scheduled backup at {} after backing up {} messages", new Date(), messageList.size());
                 }
             } catch (Exception e) {
