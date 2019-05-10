@@ -29,7 +29,7 @@ public class IndexingHandler implements MessageHandler {
             }
 
             @Override
-            void process(List<Reference> workItems) {
+            void processList(List<Reference> workItems) {
                 indexingRestClient.indexDocReferences(workItems);
             }
         };
@@ -40,7 +40,7 @@ public class IndexingHandler implements MessageHandler {
             }
 
             @Override
-            void process(List<Long> workItems) {
+            void processList(List<Long> workItems) {
                 indexingRestClient.remmoveDocIds(workItems);
             }
         };
@@ -84,13 +84,19 @@ public class IndexingHandler implements MessageHandler {
                     {
                         setWorkItemDelay(workDelay);
                     }
+
                     @Override
                     void process(List<Long> workItems) {
-                        indexingRestClient.addAncestorToDocs(ancestorId, workItems);
+                        super.process(workItems);
                         if (getQueueSize() == 0) {
                             // nothing left in the queue
                             docDescendantsToAdd.remove(ancestorId);
                         }
+                    }
+
+                    @Override
+                    void processList(List<Long> workItems) {
+                        indexingRestClient.addAncestorToDocs(ancestorId, workItems);
                     }
                 };
             } else {

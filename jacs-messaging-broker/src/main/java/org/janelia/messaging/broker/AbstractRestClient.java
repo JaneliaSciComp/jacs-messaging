@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
 import org.glassfish.jersey.client.ClientConfig;
@@ -35,7 +36,7 @@ public class AbstractRestClient {
     protected final String serverURL;
 
     protected AbstractRestClient(String serverURL) {
-        this.serverURL = serverURL;
+        this.serverURL = StringUtils.appendIfMissing(serverURL, "/");
         JacksonJsonProvider provider = new JacksonJaxbJsonProvider();
         ObjectMapper mapper = provider.locateMapper(Object.class, MediaType.APPLICATION_JSON_TYPE);
         mapper.addHandler(new DeserializationProblemHandler() {

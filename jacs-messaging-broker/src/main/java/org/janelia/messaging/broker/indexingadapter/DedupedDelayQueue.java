@@ -57,7 +57,7 @@ abstract class DedupedDelayQueue<T> {
 
     /**
      * Process as many expired work items in the queue as possible, limited only by the given batch size.
-     * @param maxBatchSize max number of items to process
+     * @param maxBatchSize max number of items to processList
      * @return the number of items that were processed
      */
     synchronized int process(int maxBatchSize) {
@@ -68,16 +68,20 @@ abstract class DedupedDelayQueue<T> {
             delayed.drainTo(expired, maxBatchSize);
         }
         List<T> workItems = expired.stream().map(delayedItem -> delayedItem.getItem()).collect(Collectors.toList());
-        if (!workItems.isEmpty()) {
-            process(workItems);
-        }
+        process(workItems);
         return expired.size();
+    }
+
+    void process(List<T> workItems) {
+        if (!workItems.isEmpty()) {
+            processList(workItems);
+        }
     }
 
     /**
      * Override this method to provide logic for processing a batch of work items. These items are about to be
      * removed from the queue.
-     * @param workItems list of work items to process
+     * @param workItems list of work items to processList
      */
-    abstract void process(List<T> workItems);
+    abstract void processList(List<T> workItems);
 }
