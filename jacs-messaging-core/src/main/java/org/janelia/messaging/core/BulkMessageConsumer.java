@@ -1,7 +1,6 @@
 package org.janelia.messaging.core;
 
 import com.rabbitmq.client.GetResponse;
-import com.rabbitmq.client.LongString;
 import org.janelia.messaging.utils.MessagingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +35,7 @@ public class BulkMessageConsumer extends AbstractMessageConsumer {
                         LOG.info("The message channel was either closed or never opened");
                         return false;
                     }
-                    lastResponse = channel.basicGet(queue, isAutoAck());
+                    lastResponse = channel.basicGet(getQueue(), isAutoAck());
                     if (lastResponse == null) {
                         return false;
                     }
@@ -47,7 +46,7 @@ public class BulkMessageConsumer extends AbstractMessageConsumer {
                     action.accept(message);
                     return lastResponse.getMessageCount() > 0;
                 } catch (IOException e) {
-                    LOG.error("Error retrieving message from {}", queue, e);
+                    LOG.error("Error retrieving message from {}", getQueue(), e);
                     return false;
                 }
             }
@@ -78,10 +77,10 @@ public class BulkMessageConsumer extends AbstractMessageConsumer {
         Map<String, String> newHeaders = new HashMap<>();
         if (requiredHeaders == null) {
             // no filtering
-            headers.forEach((k, v) -> newHeaders.put(k, MessagingUtils.convertLongString((LongString) v)));
+            headers.forEach((k, v) -> newHeaders.put(k, MessagingUtils.valueAsString(v)));
         } else {
             requiredHeaders.forEach(header -> {
-                newHeaders.put(header, MessagingUtils.convertLongString((LongString) headers.get(header)));
+                newHeaders.put(header, MessagingUtils.getHeaderAsString(headers, header));
             });
         }
         return newHeaders;

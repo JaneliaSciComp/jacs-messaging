@@ -2,10 +2,8 @@ package org.janelia.messaging.broker.neuronadapter;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.collect.ImmutableSet;
-import com.rabbitmq.client.CancelCallback;
-import com.rabbitmq.client.DeliverCallback;
 import org.janelia.messaging.broker.BrokerAdapter;
-import org.janelia.messaging.core.MessageSender;
+import org.janelia.messaging.core.MessageHandler;
 
 import java.util.Set;
 
@@ -18,27 +16,22 @@ public class NeuronBrokerAdapter extends BrokerAdapter {
     String sharedSpaceOwner = DEFAULT_SHARED_WORKSPACE_OWNER;
 
     @Override
-    public DeliverCallback getDeliveryHandler(MessageSender replySuccessSender, MessageSender replyErrorSender) {
+    public MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback, MessageHandler.HandlerCallback errorCallback) {
         return new PersistNeuronHandler(
                 new TiledMicroscopeDomainMgr(persistenceServer),
                 sharedSpaceOwner,
-                replySuccessSender,
-                replyErrorSender
+                successCallback,
+                errorCallback
         );
-    }
-
-    @Override
-    public CancelCallback getErrorHandler(MessageSender replyErrorSender) {
-        return new MessageDeliveryErrorHandler();
     }
 
     @Override
     public Set<String> getMessageHeaders() {
         return ImmutableSet.of(
-                HeaderConstants.USER,
-                HeaderConstants.WORKSPACE,
-                HeaderConstants.TYPE,
-                HeaderConstants.METADATA
+                NeuronMessageHeaders.USER,
+                NeuronMessageHeaders.WORKSPACE,
+                NeuronMessageHeaders.TYPE,
+                NeuronMessageHeaders.METADATA
         );
     }
 }

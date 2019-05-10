@@ -14,8 +14,8 @@ abstract class AbstractMessageConsumer {
 
     private final ConnectionManager connectionManager;
     Channel channel;
-    String queue;
-    boolean autoAck;
+    private String queue;
+    private boolean autoAck;
 
     public AbstractMessageConsumer(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -28,6 +28,10 @@ abstract class AbstractMessageConsumer {
     public AbstractMessageConsumer setAutoAck(boolean autoAck) {
         this.autoAck = autoAck;
         return this;
+    }
+
+    public String getQueue() {
+        return queue;
     }
 
     public AbstractMessageConsumer connect(String exchangeName, String queueName, int retries) {

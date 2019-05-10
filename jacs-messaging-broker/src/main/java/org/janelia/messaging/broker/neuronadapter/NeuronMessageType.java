@@ -3,7 +3,7 @@ package org.janelia.messaging.broker.neuronadapter;
 /**
  * Created by schauderd on 11/13/17.
  */
-public enum MessageType {
+public enum NeuronMessageType {
     NEURON_CREATE,
     NEURON_SAVE_NEURONDATA,
     NEURON_SAVE_METADATA,

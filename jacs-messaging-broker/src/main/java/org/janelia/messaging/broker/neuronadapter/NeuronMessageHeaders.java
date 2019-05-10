@@ -3,7 +3,7 @@ package org.janelia.messaging.broker.neuronadapter;
 /**
  * Created by schauderd on 11/14/17.
  */
-public class HeaderConstants {
+public class NeuronMessageHeaders {
     public static final String USER = "user";
     public static final String TARGET_USER = "target_user";
     public static final String NEURONIDS = "targetIds";

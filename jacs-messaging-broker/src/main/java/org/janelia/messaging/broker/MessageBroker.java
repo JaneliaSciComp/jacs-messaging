@@ -2,11 +2,11 @@ package org.janelia.messaging.broker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapter;
+import org.janelia.messaging.core.BulkMessageConsumer;
 import org.janelia.messaging.core.ConnectionManager;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageConsumer;
 import org.janelia.messaging.core.MessageSender;
-import org.janelia.messaging.core.BulkMessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +50,16 @@ public class MessageBroker {
         MessageConsumer messageConsumer = new MessageConsumer(connManager);
         messageConsumer.setAutoAck(true);
         messageConsumer.connect(brokerAdapter.getReceiveQueue(), brokerAdapter.getReceiveQueue(), brokerAdapter.getConnectRetries());
-        messageConsumer.setupConsumerHandlers(
-                brokerAdapter.getDeliveryHandler(replySuccessSender, replyErrorSender),
-                brokerAdapter.getErrorHandler(replyErrorSender));
+        messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
+                (messageHeaders, messageBody) -> {
+                    replySuccessSender.sendMessage(messageHeaders, messageBody);
+                },
+                (messageHeaders, messageBody) -> {
+                    // the error handler broadcasts it to all "known" senders
+                    replySuccessSender.sendMessage(messageHeaders, messageBody);
+                    replyErrorSender.sendMessage(messageHeaders, messageBody);
+                }
+                ));
     }
 
     /**

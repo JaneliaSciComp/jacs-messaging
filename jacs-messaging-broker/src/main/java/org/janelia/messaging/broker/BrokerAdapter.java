@@ -2,9 +2,7 @@ package org.janelia.messaging.broker;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.rabbitmq.client.CancelCallback;
-import com.rabbitmq.client.DeliverCallback;
-import org.janelia.messaging.core.MessageSender;
+import org.janelia.messaging.core.MessageHandler;
 
 import java.util.Set;
 
@@ -74,9 +72,8 @@ public abstract class BrokerAdapter {
         return backupLocation;
     }
 
-    public abstract DeliverCallback getDeliveryHandler(MessageSender replySuccessSender, MessageSender replyErrorSender);
-
-    public abstract CancelCallback getErrorHandler(MessageSender replyErrorSender);
+    public abstract MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback,
+                                                     MessageHandler.HandlerCallback errorCallback);
 
     public abstract Set<String> getMessageHeaders();
 
