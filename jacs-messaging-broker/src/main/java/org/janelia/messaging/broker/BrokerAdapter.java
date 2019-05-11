@@ -1,95 +1,37 @@
 package org.janelia.messaging.broker;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 import org.janelia.messaging.core.MessageHandler;
+import picocli.CommandLine;
 
 import java.util.Set;
 
 public abstract class BrokerAdapter {
-    private static final int CONNECT_RETRIES = 3;
-    private static final int DEFAULT_THREADPOOL_SIZE = 0;
     private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
+    private static final int CONNECT_RETRIES = 3;
 
-    @Parameter(names = {"-ms"}, description = "Messaging server", required = true)
-    String messagingServer;
-    @Parameter(names = {"-u"}, description = "Messaging user")
-    String messagingUser;
-    @Parameter(names = {"-p"}, description = "Messaging password")
-    String messagingPassword;
-    @Parameter(names = {"-rec"}, description = "Receiving queue", required = true)
-    String receiveQueue;
-    @Parameter(names = {"-send"}, description = "Response queue to reply success", required = true)
-    String replySuccessQueue;
-    @Parameter(names = {"-error"}, description = "Response queue to reply error", required = true)
-    String replyErrorQueue;
-    @Parameter(names = {"-backupQueue"}, description = "Backup queue")
-    String backupQueue;
-    @Parameter(names = {"-backupInterval"}, description = "Interval between two consecutive backups in milliseconds")
-    Long backupIntervalInMillis = DEFAULT_BACKUP_INTERVAL_IN_MILLIS;
-    @Parameter(names = {"-backupLocation"}, description = "Backup location")
-    String backupLocation;
-    @Parameter(names = "-h", description = "Display help", arity = 0)
-    boolean displayUsage = false;
-
-    String getMessagingServer() {
-        return messagingServer;
+    public static class AdapterArgs {
+        @CommandLine.Option(names = {"-rec"}, description = "Receiving queue", required = true)
+        String receiveQueue;
+        @CommandLine.Option(names = {"-send"}, description = "Response queue to reply success", required = true)
+        String replySuccessQueue;
+        @CommandLine.Option(names = {"-error"}, description = "Response queue to reply error", required = true)
+        String replyErrorQueue;
+        @CommandLine.Option(names = {"-backupQueue"}, description = "Backup queue")
+        String backupQueue;
+        @CommandLine.Option(names = {"-backupInterval"}, description = "Interval between two consecutive backups in milliseconds")
+        Long backupIntervalInMillis = DEFAULT_BACKUP_INTERVAL_IN_MILLIS;
+        @CommandLine.Option(names = {"-backupLocation"}, description = "Backup location")
+        String backupLocation;
+        @CommandLine.Option(names = {"-connectRetries"}, description = "How many times to try to connect")
+        Integer connectRetries = CONNECT_RETRIES;
+        @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
+        boolean displayUsage = false;
     }
 
-    String getMessagingUser() {
-        return messagingUser;
-    }
-
-    String getMessagingPassword() {
-        return messagingPassword;
-    }
-
-    int getThreadPoolSize() {
-        return DEFAULT_THREADPOOL_SIZE;
-    }
-
-    int getConnectRetries() {
-        return CONNECT_RETRIES;
-    }
-
-    String getReceiveQueue() {
-        return receiveQueue;
-    }
-
-    String getReplySuccessQueue() {
-        return replySuccessQueue;
-    }
-
-    String getReplyErrorQueue() {
-        return replyErrorQueue;
-    }
-
-    String getBackupQueue() {
-        return backupQueue;
-    }
-
-    String getBackupLocation() {
-        return backupLocation;
-    }
+    @CommandLine.Mixin
+    public AdapterArgs adapterArgs;
 
     public abstract MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback,
                                                      MessageHandler.HandlerCallback errorCallback);
-
     public abstract Set<String> getMessageHeaders();
-
-    long getBackupIntervalInMillis() {
-        return backupIntervalInMillis;
-    }
-
-    boolean parseArgs(String[] args) {
-        JCommander cmdlineParser = new JCommander(this);
-        cmdlineParser.parse(args);
-        if (displayUsage) {
-            cmdlineParser.usage(new StringBuilder());
-            return false;
-        } else {
-            return true;
-        }
-    }
-
 }
