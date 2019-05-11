@@ -6,46 +6,25 @@ import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Function;
 
 public class IndexingHandler implements MessageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(IndexingHandler.class);
 
-    private final IndexingRestClient indexingRestClient;
-    private final int workDelay;
     private final DedupedDelayQueue<Reference> docsToIndex;
     private final DedupedDelayQueue<Long> docIdsToRemove;
     private final Map<Long, DedupedDelayQueue<Long>> docDescendantsToAdd;
+    private final Function<Long, DedupedDelayQueue<Long>> docDescendantsQueueSupplier;
 
-    IndexingHandler(String indexingServerURL, int workDelay) {
-        this.indexingRestClient = new IndexingRestClient(indexingServerURL);
-        this.workDelay = workDelay;
-
-        docsToIndex = new DedupedDelayQueue<Reference>() {
-            {
-                setWorkItemDelay(workDelay);
-            }
-
-            @Override
-            void processList(List<Reference> workItems) {
-                indexingRestClient.indexDocReferences(workItems);
-            }
-        };
-
-        docIdsToRemove = new DedupedDelayQueue<Long>() {
-            {
-                setWorkItemDelay(workDelay);
-            }
-
-            @Override
-            void processList(List<Long> workItems) {
-                indexingRestClient.remmoveDocIds(workItems);
-            }
-        };
-
-        docDescendantsToAdd = new ConcurrentSkipListMap<>();
+    IndexingHandler(DedupedDelayQueue<Reference> docsToIndex,
+                    DedupedDelayQueue<Long> docIdsToRemove,
+                    Map<Long, DedupedDelayQueue<Long>> docDescendantsToAdd,
+                    Function<Long, DedupedDelayQueue<Long>> docDescendantsQueueSupplier) {
+        this.docsToIndex = docsToIndex;
+        this.docIdsToRemove = docIdsToRemove;
+        this.docDescendantsToAdd = docDescendantsToAdd;
+        this.docDescendantsQueueSupplier = docDescendantsQueueSupplier;
     }
 
     @Override
@@ -80,28 +59,9 @@ public class IndexingHandler implements MessageHandler {
         synchronized (docDescendantsToAdd) {
             DedupedDelayQueue<Long> docDescendants;
             if (docDescendantsToAdd.get(ancestorId) == null) {
-                docDescendants = new DedupedDelayQueue<Long>() {
-                    {
-                        setWorkItemDelay(workDelay);
-                    }
-
-                    @Override
-                    void process(List<Long> workItems) {
-                        super.process(workItems);
-                        if (getQueueSize() == 0) {
-                            // nothing left in the queue
-                            docDescendantsToAdd.remove(ancestorId);
-                        }
-                    }
-
-                    @Override
-                    void processList(List<Long> workItems) {
-                        indexingRestClient.addAncestorToDocs(ancestorId, workItems);
-                    }
-                };
+                docDescendants = docDescendantsQueueSupplier.apply(ancestorId);
             } else {
                 docDescendants = docDescendantsToAdd.get(ancestorId);
-
             }
             docDescendants.addWorkItem(objectId);
         }

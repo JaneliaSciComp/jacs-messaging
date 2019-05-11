@@ -1,37 +1,90 @@
 package org.janelia.messaging.broker;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.janelia.messaging.core.BulkMessageConsumer;
+import org.janelia.messaging.core.ConnectionManager;
+import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageHandler;
-import picocli.CommandLine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public abstract class BrokerAdapter {
-    private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
-    private static final int CONNECT_RETRIES = 3;
+    private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
 
-    public static class AdapterArgs {
-        @CommandLine.Option(names = {"-rec"}, description = "Receiving queue", required = true)
-        String receiveQueue;
-        @CommandLine.Option(names = {"-send"}, description = "Response queue to reply success", required = true)
-        String replySuccessQueue;
-        @CommandLine.Option(names = {"-error"}, description = "Response queue to reply error", required = true)
-        String replyErrorQueue;
-        @CommandLine.Option(names = {"-backupQueue"}, description = "Backup queue")
-        String backupQueue;
-        @CommandLine.Option(names = {"-backupInterval"}, description = "Interval between two consecutive backups in milliseconds")
-        Long backupIntervalInMillis = DEFAULT_BACKUP_INTERVAL_IN_MILLIS;
-        @CommandLine.Option(names = {"-backupLocation"}, description = "Backup location")
-        String backupLocation;
-        @CommandLine.Option(names = {"-connectRetries"}, description = "How many times to try to connect")
-        Integer connectRetries = CONNECT_RETRIES;
-        @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
-        boolean displayUsage = false;
+    public static class ScheduledTask {
+        public Runnable command;
+        public long initialDelay;
+        public long interval;
+        public TimeUnit timeUnit;
     }
 
-    @CommandLine.Mixin
-    public AdapterArgs adapterArgs;
+    final BrokerAdapterArgs adapterArgs;
+
+    protected BrokerAdapter(BrokerAdapterArgs adapterArgs) {
+        this.adapterArgs = adapterArgs;
+    }
 
     public abstract MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback,
                                                      MessageHandler.HandlerCallback errorCallback);
     public abstract Set<String> getMessageHeaders();
+
+    public void schedulePeriodicTasks(ConnectionManager connManager, ScheduledExecutorService scheduledExecutorService) {
+        ScheduledTask queueBackTask = getBackupQueueTask(connManager);
+        scheduledExecutorService.scheduleAtFixedRate(
+                queueBackTask.command,
+                queueBackTask.initialDelay,
+                queueBackTask.interval,
+                queueBackTask.timeUnit);
+    }
+
+    private ScheduledTask getBackupQueueTask(ConnectionManager connManager) {
+        // get next Saturday
+        Calendar c = Calendar.getInstance();
+        long startMillis = c.getTimeInMillis();
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.add(Calendar.DATE, 1);
+        long endMillis = c.getTimeInMillis();
+        long initDelay = endMillis - startMillis;
+
+        LOG.info("Configured scheduled backups to run with initial delay {} and every day at midnight", initDelay);
+
+        Runnable command = () -> {
+            String currentBackupLocation = adapterArgs.backupLocation + c.get(Calendar.DAY_OF_WEEK);
+            try {
+                LOG.info ("starting scheduled backup to {}", currentBackupLocation);
+                ObjectMapper mapper = new ObjectMapper();
+                BulkMessageConsumer consumer = new BulkMessageConsumer(connManager);
+                consumer.connect(adapterArgs.backupQueue, adapterArgs.backupQueue, adapterArgs.connectRetries);
+                consumer.setAutoAck(true);
+                List<GenericMessage> messageList = consumer.retrieveMessages(getMessageHeaders())
+                        .collect(Collectors.toList());
+                LOG.info("Retrieved {} messages to backup at {}", messageList.size(), currentBackupLocation);
+                try (OutputStream backupStream = new FileOutputStream(currentBackupLocation)) {
+                    mapper.writeValue(backupStream, messageList);
+                    LOG.info("Finished scheduled backup at {} after backing up {} messages", new Date(), messageList.size());
+                }
+            } catch (Exception e) {
+                LOG.error("Error writing to {}", currentBackupLocation, e);
+                LOG.error("Problem with backup, {}", e);
+            }
+        };
+        ScheduledTask scheduledTask = new ScheduledTask();
+        scheduledTask.command = command;
+        scheduledTask.initialDelay = initDelay;
+        scheduledTask.interval = adapterArgs.backupIntervalInMillis;
+        scheduledTask.timeUnit = TimeUnit.MILLISECONDS;
+        return scheduledTask;
+    }
 }

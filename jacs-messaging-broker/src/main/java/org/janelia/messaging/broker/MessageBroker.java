@@ -1,26 +1,17 @@
 package org.janelia.messaging.broker;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapter;
-import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapter;
-import org.janelia.messaging.core.BulkMessageConsumer;
+import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
+import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.core.ConnectionManager;
-import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageConsumer;
 import org.janelia.messaging.core.MessageSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Created by schauderd on 11/2/17.
@@ -75,47 +66,14 @@ public class MessageBroker {
     private void scheduleQueueBackups(ConnectionManager connManager,
                                       BrokerAdapter brokerAdapter,
                                       int threadPoolSize) {
-        // get next Saturday
-        Calendar c = Calendar.getInstance();
-        long startMillis = c.getTimeInMillis();
-        c.set(Calendar.HOUR_OF_DAY, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.add(Calendar.DATE, 1);
-        long endMillis = c.getTimeInMillis();
-        long initDelay = endMillis - startMillis;
-
-        LOG.info("Configured scheduled backups to run with initial delay {} and every day at midnight", initDelay);
-        ScheduledExecutorService backupService = Executors.newScheduledThreadPool(threadPoolSize);
-        backupService.scheduleAtFixedRate(()->{
-            String currentBackupLocation = brokerAdapter.adapterArgs.backupLocation + c.get(Calendar.DAY_OF_WEEK);
-            try {
-                LOG.info ("starting scheduled backup to {}", currentBackupLocation);
-                ObjectMapper mapper = new ObjectMapper();
-                BulkMessageConsumer consumer = new BulkMessageConsumer(connManager);
-                consumer.connect(
-                        brokerAdapter.adapterArgs.backupQueue,
-                        brokerAdapter.adapterArgs.backupQueue,
-                        brokerAdapter.adapterArgs.connectRetries);
-                consumer.setAutoAck(true);
-                List<GenericMessage> messageList = consumer.retrieveMessages(brokerAdapter.getMessageHeaders())
-                        .collect(Collectors.toList());
-                LOG.info("Retrieved {} messages to backup at {}", messageList.size(), currentBackupLocation);
-                try (OutputStream backupStream = new FileOutputStream(currentBackupLocation)) {
-                    mapper.writeValue(backupStream, messageList);
-                    LOG.info("Finished scheduled backup at {} after backing up {} messages", new Date(), messageList.size());
-                }
-            } catch (Exception e) {
-                LOG.error("Error writing to {}", currentBackupLocation, e);
-                LOG.error("Problem with backup, {}", e);
-            }
-        }, initDelay, brokerAdapter.adapterArgs.backupIntervalInMillis, TimeUnit.MILLISECONDS);
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(threadPoolSize);
+        brokerAdapter.schedulePeriodicTasks(connManager, scheduledExecutorService);
     }
 
-    private BrokerAdapter parseArgs(String[] args) {
+    private BrokerAdapterFactory<?> parseArgs(String[] args) {
         CommandLine commandLine = new CommandLine(this)
-                .addSubcommand("neuronBroker", new NeuronBrokerAdapter())
-                .addSubcommand("indexingBroker", new IndexingBrokerAdapter())
+                .addSubcommand("neuronBroker", new NeuronBrokerAdapterFactory())
+                .addSubcommand("indexingBroker", new IndexingBrokerAdapterFactory())
                   ;
         List<CommandLine> commandLines = commandLine.parse(args);
         System.out.println("!1LEN " + commandLines.size());
@@ -133,16 +91,15 @@ public class MessageBroker {
     public static void main(String[] args) {
         MessageBroker mb = new MessageBroker();
 
-        BrokerAdapter ba = mb.parseArgs(args);
+        BrokerAdapterFactory<?> ba = mb.parseArgs(args);
         if (ba != null) {
             ConnectionManager connManager = new ConnectionManager(
                     mb.messagingServer,
                     mb.messagingUser,
                     mb.messagingPassword,
                     mb.consumerThreads);
-            mb.startBroker(connManager, ba);
+            mb.startBroker(connManager, ba.createBrokerAdapter());
         }
-
     }
 
 }
