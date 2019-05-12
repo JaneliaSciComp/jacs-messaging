@@ -3,7 +3,7 @@ package org.janelia.messaging.broker.indexingadapter;
 import com.google.common.collect.ImmutableSet;
 import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.broker.BrokerAdapterArgs;
-import org.janelia.messaging.core.ConnectionManager;
+import org.janelia.messaging.core.impl.ConnectionManager;
 import org.janelia.messaging.core.MessageHandler;
 import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;

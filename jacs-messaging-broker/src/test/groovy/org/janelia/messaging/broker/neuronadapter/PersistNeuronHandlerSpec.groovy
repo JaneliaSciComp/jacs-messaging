@@ -2,7 +2,7 @@ package org.janelia.messaging.broker.neuronadapter
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.rabbitmq.client.impl.LongStringHelper
-import org.janelia.messaging.core.MessageSender
+import org.janelia.messaging.core.impl.MessageSenderImpl
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata
 import spock.lang.Specification
 
@@ -59,15 +59,15 @@ class PersistNeuronHandlerSpec extends Specification {
 
     ObjectMapper mapper
     TiledMicroscopeDomainMgr domainMgr
-    MessageSender replySuccessSender
-    MessageSender replyErrorSender
+    MessageSenderImpl replySuccessSender
+    MessageSenderImpl replyErrorSender
     def persistNeuronHandler
 
     def setup() {
         mapper = new ObjectMapper();
         domainMgr = Mock(TiledMicroscopeDomainMgr.class);
-        replySuccessSender = Mock(MessageSender.class);
-        replyErrorSender = Mock(MessageSender.class);
+        replySuccessSender = Mock(MessageSenderImpl.class);
+        replyErrorSender = Mock(MessageSenderImpl.class);
         persistNeuronHandler = new PersistNeuronHandler(
                 domainMgr,
                 "group:mouselight",

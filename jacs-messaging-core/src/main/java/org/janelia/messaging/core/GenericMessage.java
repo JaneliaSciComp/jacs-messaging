@@ -13,8 +13,8 @@ public class GenericMessage {
     private final Map<String, String> headers;
 
     @JsonCreator
-    GenericMessage(@JsonProperty("headers") Map<String, String> headers,
-                   @JsonProperty("body") byte[] body) {
+    public GenericMessage(@JsonProperty("headers") Map<String, String> headers,
+                          @JsonProperty("body") byte[] body) {
         this.headers = headers;
         this.body = body;
     }

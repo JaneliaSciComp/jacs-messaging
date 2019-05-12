@@ -1,8 +1,8 @@
 package org.janelia.messaging.broker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.janelia.messaging.core.BulkMessageConsumer;
-import org.janelia.messaging.core.ConnectionManager;
+import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
+import org.janelia.messaging.core.impl.ConnectionManager;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageHandler;
 import org.slf4j.Logger;
@@ -65,8 +65,14 @@ public abstract class BrokerAdapter {
             try {
                 LOG.info ("starting scheduled backup to {}", currentBackupLocation);
                 ObjectMapper mapper = new ObjectMapper();
-                BulkMessageConsumer consumer = new BulkMessageConsumer(connManager);
-                consumer.connect(adapterArgs.backupQueue, adapterArgs.backupQueue, adapterArgs.connectRetries);
+                BulkMessageConsumerImpl consumer = new BulkMessageConsumerImpl(connManager);
+                consumer.connect(
+                        adapterArgs.messagingServer,
+                        adapterArgs.messagingUser,
+                        adapterArgs.messagingPassword,
+                        adapterArgs.backupQueue,
+                        adapterArgs.backupQueue,
+                        adapterArgs.connectRetries);
                 consumer.setAutoAck(true);
                 List<GenericMessage> messageList = consumer.retrieveMessages(getMessageHeaders())
                         .collect(Collectors.toList());

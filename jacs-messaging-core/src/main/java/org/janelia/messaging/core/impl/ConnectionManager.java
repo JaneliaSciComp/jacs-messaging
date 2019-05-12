@@ -1,4 +1,4 @@
-package org.janelia.messaging.core;
+package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -18,21 +18,22 @@ public class ConnectionManager {
     private final ConnectionFactory factory;
     private final ExecutorService executorService;
 
-    public ConnectionManager(String host, String username, String password, int threadPoolSize) {
+    public ConnectionManager() {
+        this(0);
+    }
+
+    public ConnectionManager(int threadPoolSize) {
         factory = new ConnectionFactory();
-        factory.setHost(host);
-        factory.setUsername(username);
-        factory.setPassword(password);
         factory.setConnectionTimeout(0);
         executorService = threadPoolSize > 0 ? Executors.newFixedThreadPool(threadPoolSize) : null;
     }
 
-    Channel openChannel(int retries) throws Exception {
+    Channel openChannel(String host, String username, String password, int retries) throws Exception {
         int retry = 0;
         Connection conn;
         for (;;) {
             try {
-                conn = openConnection();
+                conn = openConnection(host, username, password);
                 return conn.createChannel();
             } catch (Exception e) {
                 retry++;
@@ -46,7 +47,10 @@ public class ConnectionManager {
         }
     }
 
-    private Connection openConnection() throws Exception {
+    private Connection openConnection(String host, String username, String password) throws Exception {
+        factory.setHost(host);
+        factory.setUsername(username);
+        factory.setPassword(password);
         return executorService != null
                 ? factory.newConnection(executorService)
                 : factory.newConnection();

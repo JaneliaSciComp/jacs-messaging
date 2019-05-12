@@ -6,6 +6,12 @@ public class BrokerAdapterArgs {
     private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
     private static final int CONNECT_RETRIES = 3;
 
+    @CommandLine.Option(names = {"-ms"}, description = "Messaging server", required = true)
+    String messagingServer;
+    @CommandLine.Option(names = {"-u"}, description = "Messaging user")
+    String messagingUser;
+    @CommandLine.Option(names = {"-p"}, description = "Messaging password")
+    String messagingPassword;
     @CommandLine.Option(names = {"-rec"}, description = "Receiving queue", required = true)
     String receiveQueue;
     @CommandLine.Option(names = {"-send"}, description = "Response queue to reply success", required = true)

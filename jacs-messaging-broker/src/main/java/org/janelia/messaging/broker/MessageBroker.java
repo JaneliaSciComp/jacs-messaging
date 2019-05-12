@@ -2,9 +2,9 @@ package org.janelia.messaging.broker;
 
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
-import org.janelia.messaging.core.ConnectionManager;
-import org.janelia.messaging.core.MessageConsumer;
-import org.janelia.messaging.core.MessageSender;
+import org.janelia.messaging.core.impl.ConnectionManager;
+import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
+import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -21,12 +21,6 @@ public class MessageBroker {
     private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
     private static final int CONSUMERS_THREADPOOL_SIZE = 0;
 
-    @CommandLine.Option(names = {"-ms"}, description = "Messaging server", required = true)
-    String messagingServer;
-    @CommandLine.Option(names = {"-u"}, description = "Messaging user")
-    String messagingUser;
-    @CommandLine.Option(names = {"-p"}, description = "Messaging password")
-    String messagingPassword;
     @CommandLine.Option(names = {"-consumerThreads"}, description = "Consumers thread pool size")
     Integer consumerThreads = CONSUMERS_THREADPOOL_SIZE;
 
@@ -35,15 +29,33 @@ public class MessageBroker {
 
         scheduleQueueBackups(connManager, brokerAdapter, 5);
 
-        MessageSender replySuccessSender = new MessageSender(connManager);
-        replySuccessSender.connect(brokerAdapter.adapterArgs.replySuccessQueue, "", brokerAdapter.adapterArgs.connectRetries);
+        MessageSenderImpl replySuccessSender = new MessageSenderImpl(connManager);
+        replySuccessSender.connect(
+                brokerAdapter.adapterArgs.messagingServer,
+                brokerAdapter.adapterArgs.messagingUser,
+                brokerAdapter.adapterArgs.messagingPassword,
+                brokerAdapter.adapterArgs.replySuccessQueue,
+                "",
+                brokerAdapter.adapterArgs.connectRetries);
 
-        MessageSender replyErrorSender = new MessageSender(connManager);
-        replyErrorSender.connect(brokerAdapter.adapterArgs.replyErrorQueue, "", brokerAdapter.adapterArgs.connectRetries);
+        MessageSenderImpl replyErrorSender = new MessageSenderImpl(connManager);
+        replyErrorSender.connect(
+                brokerAdapter.adapterArgs.messagingServer,
+                brokerAdapter.adapterArgs.messagingUser,
+                brokerAdapter.adapterArgs.messagingPassword,
+                brokerAdapter.adapterArgs.replyErrorQueue,
+                "",
+                brokerAdapter.adapterArgs.connectRetries);
 
-        MessageConsumer messageConsumer = new MessageConsumer(connManager);
+        AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(connManager);
         messageConsumer.setAutoAck(true);
-        messageConsumer.connect(brokerAdapter.adapterArgs.receiveQueue, brokerAdapter.adapterArgs.receiveQueue, brokerAdapter.adapterArgs.connectRetries);
+        messageConsumer.connect(
+                brokerAdapter.adapterArgs.messagingServer,
+                brokerAdapter.adapterArgs.messagingUser,
+                brokerAdapter.adapterArgs.messagingPassword,
+                brokerAdapter.adapterArgs.receiveQueue,
+                brokerAdapter.adapterArgs.receiveQueue,
+                brokerAdapter.adapterArgs.connectRetries);
         messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
                     replySuccessSender.sendMessage(messageHeaders, messageBody);
@@ -93,11 +105,7 @@ public class MessageBroker {
 
         BrokerAdapterFactory<?> ba = mb.parseArgs(args);
         if (ba != null) {
-            ConnectionManager connManager = new ConnectionManager(
-                    mb.messagingServer,
-                    mb.messagingUser,
-                    mb.messagingPassword,
-                    mb.consumerThreads);
+            ConnectionManager connManager = new ConnectionManager(mb.consumerThreads);
             mb.startBroker(connManager, ba.createBrokerAdapter());
         }
     }
