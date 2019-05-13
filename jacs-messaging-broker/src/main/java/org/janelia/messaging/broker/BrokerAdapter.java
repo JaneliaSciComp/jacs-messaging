@@ -71,6 +71,7 @@ public abstract class BrokerAdapter {
                         adapterArgs.messagingUser,
                         adapterArgs.messagingPassword,
                         adapterArgs.backupQueue,
+                        adapterArgs.consumerThreads,
                         adapterArgs.connectRetries);
                 consumer.setAutoAck(true);
                 List<GenericMessage> messageList = consumer.retrieveMessages(getMessageHeaders())

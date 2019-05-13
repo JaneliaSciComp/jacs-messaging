@@ -5,6 +5,7 @@ import picocli.CommandLine;
 public class BrokerAdapterArgs {
     private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
     private static final int CONNECT_RETRIES = 3;
+    private static final int CONSUMERS_THREADPOOL_SIZE = 0;
 
     @CommandLine.Option(names = {"-ms"}, description = "Messaging server", required = true)
     String messagingServer;
@@ -26,6 +27,8 @@ public class BrokerAdapterArgs {
     String backupLocation;
     @CommandLine.Option(names = {"-connectRetries"}, description = "How many times to try to connect")
     Integer connectRetries = CONNECT_RETRIES;
+    @CommandLine.Option(names = {"-consumerThreads"}, description = "Consumers thread pool size")
+    Integer consumerThreads = CONSUMERS_THREADPOOL_SIZE;
     @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
     boolean displayUsage = false;
 }

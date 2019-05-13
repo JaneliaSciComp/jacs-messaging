@@ -2,11 +2,9 @@ package org.janelia.messaging.broker;
 
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
-import org.janelia.messaging.core.impl.ConnectionManager;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
+import org.janelia.messaging.core.impl.ConnectionManager;
 import org.janelia.messaging.core.impl.MessageSenderImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.util.List;
@@ -18,12 +16,6 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 @CommandLine.Command
 public class MessageBroker {
-    private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
-    private static final int CONSUMERS_THREADPOOL_SIZE = 0;
-
-    @CommandLine.Option(names = {"-consumerThreads"}, description = "Consumers thread pool size")
-    Integer consumerThreads = CONSUMERS_THREADPOOL_SIZE;
-
     private void startBroker(ConnectionManager connManager,
                              BrokerAdapter brokerAdapter) {
 
@@ -54,6 +46,7 @@ public class MessageBroker {
                 brokerAdapter.adapterArgs.messagingUser,
                 brokerAdapter.adapterArgs.messagingPassword,
                 brokerAdapter.adapterArgs.receiveQueue,
+                brokerAdapter.adapterArgs.consumerThreads,
                 brokerAdapter.adapterArgs.connectRetries);
         messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
@@ -103,8 +96,7 @@ public class MessageBroker {
 
         BrokerAdapterFactory<?> ba = mb.parseArgs(args);
         if (ba != null) {
-            ConnectionManager connManager = new ConnectionManager(mb.consumerThreads);
-            mb.startBroker(connManager, ba.createBrokerAdapter());
+            mb.startBroker(ConnectionManager.getInstance(), ba.createBrokerAdapter());
         }
     }
 

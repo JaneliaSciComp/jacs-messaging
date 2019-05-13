@@ -57,11 +57,11 @@ public class QueueBackupTool {
             if (Files.notExists(backupLocationPath) && backupLocationPath.getParent() != null) {
                 Files.createDirectories(backupLocationPath.getParent());
             }
-            ConnectionManager connManager = new ConnectionManager(0);
+            ConnectionManager connManager = ConnectionManager.getInstance();
 
             BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(connManager);
             messageConsumer.setAutoAck(false);
-            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, connectRetries);
+            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, 0, connectRetries);
 
             List<GenericMessage> messageList = messageConsumer.retrieveMessages(null)
                     .collect(Collectors.toList());

@@ -6,7 +6,6 @@ import com.rabbitmq.client.ConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -15,25 +14,28 @@ import java.util.concurrent.Executors;
 public class ConnectionManager {
     private static final Logger LOG = LoggerFactory.getLogger(ConnectionManager.class);
 
-    private final ConnectionFactory factory;
-    private final ExecutorService executorService;
+    private static ConnectionManager connectionManagerInstance;
 
-    public ConnectionManager() {
-        this(0);
+    public static ConnectionManager getInstance() {
+        if (connectionManagerInstance == null) {
+            connectionManagerInstance = new ConnectionManager();
+        }
+        return connectionManagerInstance;
     }
 
-    public ConnectionManager(int threadPoolSize) {
+    private final ConnectionFactory factory;
+
+    private ConnectionManager() {
         factory = new ConnectionFactory();
         factory.setConnectionTimeout(0);
-        executorService = threadPoolSize > 0 ? Executors.newFixedThreadPool(threadPoolSize) : null;
     }
 
-    Channel openChannel(String host, String username, String password, int retries) throws Exception {
+    Channel openChannel(String host, String username, String password, int threadPoolSize, int retries) throws Exception {
         int retry = 0;
         Connection conn;
         for (;;) {
             try {
-                conn = openConnection(host, username, password);
+                conn = openConnection(host, username, password, threadPoolSize);
                 return conn.createChannel();
             } catch (Exception e) {
                 retry++;
@@ -47,12 +49,12 @@ public class ConnectionManager {
         }
     }
 
-    private Connection openConnection(String host, String username, String password) throws Exception {
+    private Connection openConnection(String host, String username, String password, int threadPoolSize) throws Exception {
         factory.setHost(host);
         factory.setUsername(username);
         factory.setPassword(password);
-        return executorService != null
-                ? factory.newConnection(executorService)
+        return threadPoolSize > 0
+                ? factory.newConnection(Executors.newFixedThreadPool(threadPoolSize))
                 : factory.newConnection();
     }
 }

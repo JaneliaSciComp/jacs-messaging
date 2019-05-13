@@ -16,7 +16,7 @@ dependencies {
         COMMONS_LANG_LIB = "org.apache.commons:commons-lang3:${COMMONS_LANG_VERSION}"
 
         // rabbitmq
-        RABBITMQ_VERSION = "5.5.1"
+        RABBITMQ_VERSION = "5.7.0"
         RABBITMQ_CLIENT_LIB = "com.rabbitmq:amqp-client:${RABBITMQ_VERSION}"
 
         // JSON

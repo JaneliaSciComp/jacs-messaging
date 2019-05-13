@@ -28,13 +28,15 @@ public class MessageSenderImpl implements MessageSender {
     public MessageSenderImpl connect(String host,
                                      String user,
                                      String password,
-                                     String exchange, String routingKey, int retries) {
+                                     String exchange,
+                                     String routingKey,
+                                     int retries) {
         this.exchange = exchange;
         this.routingKey = routingKey;
 
         // get a channel from the connectionManager
         try {
-            channel = connectionManager.openChannel(host, user, password, retries);
+            channel = connectionManager.openChannel(host, user, password, 0, retries);
             return this;
         } catch (Exception e) {
             LOG.error("Error connecting to {} {} after {} retries", exchange, routingKey, retries, e);
