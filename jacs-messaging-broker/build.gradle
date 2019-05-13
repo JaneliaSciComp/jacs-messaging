@@ -19,6 +19,7 @@ project(":jacs-messaging-broker") {
                        JAX_RS_JERSEY_APACHE_CONNECTOR_LIB,
                        JAX_RS_JERSEY_MEDIA_JSON_LIB,
                        JAX_RS_JERSEY_MEDIA_LIB,
+                       JAX_RS_JERSEY_INJECT_LIB,
                        SOLR_SEARCH_LIB
     }
 

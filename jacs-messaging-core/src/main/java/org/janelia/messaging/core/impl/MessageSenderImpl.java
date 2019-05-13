@@ -2,6 +2,7 @@ package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import org.janelia.messaging.core.MessageSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ public class MessageSenderImpl implements MessageSender {
 
     private final ConnectionManager connectionManager;
 
+    private Connection connection;
     private Channel channel;
     private String exchange;
     private String routingKey;
@@ -25,21 +27,18 @@ public class MessageSenderImpl implements MessageSender {
     }
 
     @Override
-    public MessageSenderImpl connect(String host,
-                                     String user,
-                                     String password,
-                                     String exchange,
-                                     String routingKey,
-                                     int retries) {
-        this.exchange = exchange;
-        this.routingKey = routingKey;
-
-        // get a channel from the connectionManager
+    public void connect(String host,
+                        String user,
+                        String password,
+                        String exchange,
+                        String routingKey) {
         try {
-            channel = connectionManager.openChannel(host, user, password, 0, retries);
-            return this;
+            this.exchange = exchange;
+            this.routingKey = routingKey;
+            connection = connectionManager.openConnection(host, user, password, 0);
+            channel = connection.createChannel();
         } catch (Exception e) {
-            LOG.error("Error connecting to {} {} after {} retries", exchange, routingKey, retries, e);
+            LOG.error("Error connecting to {} with routingkey {}", exchange, routingKey, e);
             throw new IllegalStateException("Error connecting to " + exchange, e);
         }
     }
@@ -48,9 +47,17 @@ public class MessageSenderImpl implements MessageSender {
     public void disconnect() {
         if (channel != null) {
             try {
+                LOG.info("Close message sender channel");
                 channel.close();
             } catch (Exception e) {
                 LOG.error("Error disconnecting from the exchange {}", exchange, e);
+            } finally {
+                channel = null;
+                try {
+                    connection.close();
+                } catch (Exception ignore) {
+                }
+                connection = null;
             }
         }
     }

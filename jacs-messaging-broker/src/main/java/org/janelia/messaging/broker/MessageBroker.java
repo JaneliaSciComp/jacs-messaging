@@ -27,8 +27,7 @@ public class MessageBroker {
                 brokerAdapter.adapterArgs.messagingUser,
                 brokerAdapter.adapterArgs.messagingPassword,
                 brokerAdapter.adapterArgs.replySuccessQueue,
-                "",
-                brokerAdapter.adapterArgs.connectRetries);
+                "");
 
         MessageSenderImpl replyErrorSender = new MessageSenderImpl(connManager);
         replyErrorSender.connect(
@@ -36,8 +35,7 @@ public class MessageBroker {
                 brokerAdapter.adapterArgs.messagingUser,
                 brokerAdapter.adapterArgs.messagingPassword,
                 brokerAdapter.adapterArgs.replyErrorQueue,
-                "",
-                brokerAdapter.adapterArgs.connectRetries);
+                "");
 
         AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(connManager);
         messageConsumer.setAutoAck(true);
@@ -46,8 +44,7 @@ public class MessageBroker {
                 brokerAdapter.adapterArgs.messagingUser,
                 brokerAdapter.adapterArgs.messagingPassword,
                 brokerAdapter.adapterArgs.receiveQueue,
-                brokerAdapter.adapterArgs.consumerThreads,
-                brokerAdapter.adapterArgs.connectRetries);
+                brokerAdapter.adapterArgs.consumerThreads);
         messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
                     replySuccessSender.sendMessage(messageHeaders, messageBody);

@@ -15,9 +15,9 @@ public class BrokerAdapterArgs {
     String messagingPassword;
     @CommandLine.Option(names = {"-rec"}, description = "Receiving queue", required = true)
     String receiveQueue;
-    @CommandLine.Option(names = {"-send"}, description = "Response queue to reply success", required = true)
+    @CommandLine.Option(names = {"-send"}, description = "Response queue to reply success")
     String replySuccessQueue;
-    @CommandLine.Option(names = {"-error"}, description = "Response queue to reply error", required = true)
+    @CommandLine.Option(names = {"-error"}, description = "Response queue to reply error")
     String replyErrorQueue;
     @CommandLine.Option(names = {"-backupQueue"}, description = "Backup queue")
     String backupQueue;

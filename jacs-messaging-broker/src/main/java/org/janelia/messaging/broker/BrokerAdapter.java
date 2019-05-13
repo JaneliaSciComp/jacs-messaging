@@ -36,6 +36,7 @@ public abstract class BrokerAdapter {
 
     public abstract MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback,
                                                      MessageHandler.HandlerCallback errorCallback);
+
     public abstract Set<String> getMessageHeaders();
 
     public void schedulePeriodicTasks(ConnectionManager connManager, ScheduledExecutorService scheduledExecutorService) {
@@ -71,8 +72,7 @@ public abstract class BrokerAdapter {
                         adapterArgs.messagingUser,
                         adapterArgs.messagingPassword,
                         adapterArgs.backupQueue,
-                        adapterArgs.consumerThreads,
-                        adapterArgs.connectRetries);
+                        adapterArgs.consumerThreads);
                 consumer.setAutoAck(true);
                 List<GenericMessage> messageList = consumer.retrieveMessages(getMessageHeaders())
                         .collect(Collectors.toList());

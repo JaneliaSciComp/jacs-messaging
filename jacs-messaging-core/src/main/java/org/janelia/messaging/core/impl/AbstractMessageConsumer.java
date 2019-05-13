@@ -1,6 +1,7 @@
 package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.MessageConsumer;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractMessageConsumer.class);
 
     private final ConnectionManager connectionManager;
+    Connection connection;
     Channel channel;
     private String queue;
     private boolean autoAck;
@@ -36,53 +38,63 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
     }
 
     @Override
-    public AbstractMessageConsumer connect(String host,
-                                           String user,
-                                           String password,
-                                           String queueName,
-                                           int threadPoolSize,
-                                           int retries) {
-        try {
-            LOG.debug("Connect to queue {}", queueName);
-            channel = connectionManager.openChannel(host, user, password, threadPoolSize, retries);
-            this.queue = queueName;
-        } catch (Exception e) {
-            LOG.error("Error connecting to queue {} after {} retries", queueName, retries);
-            throw new IllegalStateException("Error connecting to " + queueName, e);
-        }
-        return this;
+    public void connect(String host,
+                        String user,
+                        String password,
+                        String queueName,
+                        int threadPoolSize) {
+        openChannel(host, user, password, threadPoolSize);
+        LOG.debug("Connect to queue {}", queueName);
+        this.queue = queueName;
     }
 
     @Override
-    public AbstractMessageConsumer bindAndConnect(String host,
-                                                  String user,
-                                                  String password,
-                                                  String exchangeName,
-                                                  String routingKey,
-                                                  int threadPoolSize,
-                                                  int retries) {
+    public void bindAndConnect(String host,
+                               String user,
+                               String password,
+                               String exchangeName,
+                               String routingKey,
+                               int threadPoolSize) {
+        openChannel(host, user, password, threadPoolSize);
         try {
             LOG.debug("Connect to exchange {}", exchangeName);
-            channel = connectionManager.openChannel(host, user, password, threadPoolSize, retries);
-            // if no queue defined, get random queue and bind to this exchange
             this.queue = channel.queueDeclare().getQueue();
             channel.queueBind(this.queue, exchangeName, StringUtils.defaultIfBlank(routingKey, ""));
         } catch (Exception e) {
-            LOG.error("Error connecting to exchange {} after {} retries", exchangeName, retries);
+            LOG.error("Error connecting to exchange {}", exchangeName);
             throw new IllegalStateException("Error connecting to " + exchangeName, e);
         }
-        return this;
+    }
+
+    private void openChannel(String host,
+                             String user,
+                             String password,
+                             int threadPoolSize) {
+        try {
+            LOG.info("Open connection to {} as user {}", host, user);
+            connection = connectionManager.openConnection(host, user, password, threadPoolSize);
+            channel = connection.createChannel();
+        } catch (Exception e) {
+            LOG.error("Error connecting to host {} with user {}", host, user);
+            throw new IllegalStateException("Error connecting to host " + host, e);
+        }
     }
 
     @Override
     public void disconnect() {
         if (channel != null) {
             try {
+                LOG.info("Close message consumer channel");
                 channel.close();
             } catch (Exception e) {
-                LOG.error("Error disconnecting from the exchange channel {}", this.queue, e);
+                LOG.error("Error disconnecting from the queue {}", queue, e);
             } finally {
                 channel = null;
+                try {
+                    connection.close();
+                } catch (Exception ignore) {
+                }
+                connection = null;
             }
         }
     }

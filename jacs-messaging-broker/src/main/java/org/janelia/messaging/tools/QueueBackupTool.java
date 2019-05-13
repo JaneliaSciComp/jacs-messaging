@@ -35,7 +35,6 @@ public class QueueBackupTool {
     String backupLocation;
     @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
     boolean displayUsage = false;
-    int connectRetries = DEFAULT_CONNECT_RETRIES;
 
     private QueueBackupTool() {
     }
@@ -61,7 +60,7 @@ public class QueueBackupTool {
 
             BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(connManager);
             messageConsumer.setAutoAck(false);
-            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, 0, connectRetries);
+            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, 0);
 
             List<GenericMessage> messageList = messageConsumer.retrieveMessages(null)
                     .collect(Collectors.toList());
