@@ -61,7 +61,7 @@ public class QueueBackupTool {
 
             BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(connManager);
             messageConsumer.setAutoAck(false);
-            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, queueName, connectRetries);
+            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, connectRetries);
 
             List<GenericMessage> messageList = messageConsumer.retrieveMessages(null)
                     .collect(Collectors.toList());

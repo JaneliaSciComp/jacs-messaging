@@ -39,22 +39,35 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
     public AbstractMessageConsumer connect(String host,
                                            String user,
                                            String password,
-                                           String exchangeName,
                                            String queueName,
                                            int retries) {
         try {
-            LOG.debug("Connect to exchange - {}, queue - {}", exchangeName, queueName);
+            LOG.debug("Connect to queue {}", queueName);
+            channel = connectionManager.openChannel(host, user, password, retries);
+            this.queue = queueName;
+        } catch (Exception e) {
+            LOG.error("Error connecting to queue {} after {} retries", queueName, retries);
+            throw new IllegalStateException("Error connecting to " + queueName, e);
+        }
+        return this;
+    }
+
+    @Override
+    public AbstractMessageConsumer bindAndConnect(String host,
+                                                  String user,
+                                                  String password,
+                                                  String exchangeName,
+                                                  String routingKey,
+                                                  int retries) {
+        try {
+            LOG.debug("Connect to exchange {}", exchangeName);
             channel = connectionManager.openChannel(host, user, password, retries);
             // if no queue defined, get random queue and bind to this exchange
-            if (StringUtils.isBlank(queueName)) {
-                this.queue = channel.queueDeclare().getQueue();
-                channel.queueBind(this.queue, exchangeName, "");
-            } else {
-                this.queue = queueName;
-            }
+            this.queue = channel.queueDeclare().getQueue();
+            channel.queueBind(this.queue, exchangeName, StringUtils.defaultIfBlank(routingKey, ""));
         } catch (Exception e) {
-            LOG.error("Error connecting to exchange - {}, queue - {} after {} retries", exchangeName, queueName, retries);
-            throw new IllegalStateException("Error connecting to " + queueName, e);
+            LOG.error("Error connecting to exchange {} after {} retries", exchangeName, retries);
+            throw new IllegalStateException("Error connecting to " + exchangeName, e);
         }
         return this;
     }

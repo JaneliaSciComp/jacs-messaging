@@ -54,7 +54,6 @@ public class MessageBroker {
                 brokerAdapter.adapterArgs.messagingUser,
                 brokerAdapter.adapterArgs.messagingPassword,
                 brokerAdapter.adapterArgs.receiveQueue,
-                brokerAdapter.adapterArgs.receiveQueue,
                 brokerAdapter.adapterArgs.connectRetries);
         messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
@@ -65,8 +64,7 @@ public class MessageBroker {
                     replySuccessSender.sendMessage(messageHeaders, messageBody);
                     replyErrorSender.sendMessage(messageHeaders, messageBody);
                 }
-                ));
-        System.out.println("!!!!!!!!!!");
+        ));
     }
 
     /**
