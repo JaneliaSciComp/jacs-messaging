@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class BrokerAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BrokerAdapter.class);
 
     public static class ScheduledTask {
         public Runnable command;
@@ -32,6 +32,10 @@ public abstract class BrokerAdapter {
 
     protected BrokerAdapter(BrokerAdapterArgs adapterArgs) {
         this.adapterArgs = adapterArgs;
+    }
+
+    public boolean useAutoAck() {
+        return true;
     }
 
     public abstract MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback,

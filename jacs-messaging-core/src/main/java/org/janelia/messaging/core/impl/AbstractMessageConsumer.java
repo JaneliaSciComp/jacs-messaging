@@ -44,7 +44,6 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
                         String queueName,
                         int threadPoolSize) {
         openChannel(host, user, password, threadPoolSize);
-        LOG.debug("Connect to queue {}", queueName);
         this.queue = queueName;
     }
 

@@ -5,6 +5,8 @@ import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
 import org.janelia.messaging.core.impl.ConnectionManager;
 import org.janelia.messaging.core.impl.MessageSenderImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 
 import java.util.List;
@@ -16,6 +18,8 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 @CommandLine.Command
 public class MessageBroker {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
+
     private void startBroker(ConnectionManager connManager,
                              BrokerAdapter brokerAdapter) {
 
@@ -38,7 +42,7 @@ public class MessageBroker {
                 "");
 
         AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(connManager);
-        messageConsumer.setAutoAck(true);
+        messageConsumer.setAutoAck(brokerAdapter.useAutoAck());
         messageConsumer.connect(
                 brokerAdapter.adapterArgs.messagingServer,
                 brokerAdapter.adapterArgs.messagingUser,
@@ -74,16 +78,13 @@ public class MessageBroker {
         CommandLine commandLine = new CommandLine(this)
                 .addSubcommand("neuronBroker", new NeuronBrokerAdapterFactory())
                 .addSubcommand("indexingBroker", new IndexingBrokerAdapterFactory())
-                  ;
+                ;
         List<CommandLine> commandLines = commandLine.parse(args);
-        System.out.println("!1LEN " + commandLines.size());
-        for (CommandLine cmd : commandLines) {
-            System.out.println("!!! " + cmd.getCommandName() + " " + cmd.getCommand());
-        }
         if (commandLine.isUsageHelpRequested() || commandLines.size() < 2) {
             commandLine.usage(System.out);
             return null;
         } else {
+            LOG.info("Start {}", commandLines.get(1).getCommandName());
             return commandLines.get(1).getCommand();
         }
     }
