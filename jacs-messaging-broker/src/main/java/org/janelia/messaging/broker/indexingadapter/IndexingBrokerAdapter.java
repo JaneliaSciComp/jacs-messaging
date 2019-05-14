@@ -9,7 +9,9 @@ import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -59,8 +61,27 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     @Override
     public MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback, MessageHandler.HandlerCallback errorCallback) {
         return new IndexingHandler(
-                docsToIndex,
-                docIdsToRemove,
+                new DedupedDelayQueueWrapper<Reference>(docsToIndex) {
+                    @Override
+                    void processList(List<Reference> workItems) {
+                        super.processList(workItems);
+                        Map<String, Object> messageHeaders = new LinkedHashMap<>();
+                        messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
+                        messageHeaders.put(IndexingMessageHeaders.OBJECT_REFS, workItems);
+                        successCallback.callback(messageHeaders, null);
+                    }
+                },
+                new DedupedDelayQueueWrapper<Long>(docIdsToRemove) {
+                    @Override
+                    void processList(List<Long> workItems) {
+                        super.processList(workItems);
+                        Map<String, Object> messageHeaders = new LinkedHashMap<>();
+                        messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
+                        messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS, workItems);
+                        successCallback.callback(messageHeaders, null);
+                    }
+                }
+                ,
                 docDescendantsToAdd,
                 (ancestorId) -> new DedupedDelayQueue<Long>() {
                     {
@@ -79,6 +100,12 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                     @Override
                     void processList(List<Long> workItems) {
                         indexingRestClient.addAncestorToDocs(ancestorId, workItems);
+                        Map<String, Object> messageHeaders = new LinkedHashMap<>();
+                        messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
+                        messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS, workItems);
+                        messageHeaders.put(IndexingMessageHeaders.ANCESTOR_ID, ancestorId);
+                        successCallback.callback(messageHeaders, null);
+
                     }
                 });
     }
