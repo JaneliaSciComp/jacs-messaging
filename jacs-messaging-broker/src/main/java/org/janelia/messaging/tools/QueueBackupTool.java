@@ -1,7 +1,7 @@
 package org.janelia.messaging.tools;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.janelia.messaging.core.impl.MessageConnection;
+import org.janelia.messaging.core.impl.MessageConnectionImpl;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public class QueueBackupTool {
             if (Files.notExists(backupLocationPath) && backupLocationPath.getParent() != null) {
                 Files.createDirectories(backupLocationPath.getParent());
             }
-            MessageConnection messageConnection = new MessageConnection();
+            MessageConnectionImpl messageConnection = new MessageConnectionImpl();
             messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, 0);
 
             BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(messageConnection);

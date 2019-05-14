@@ -3,7 +3,7 @@ package org.janelia.messaging.broker.indexingadapter;
 import com.google.common.collect.ImmutableSet;
 import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.broker.BrokerAdapterArgs;
-import org.janelia.messaging.core.impl.MessageConnection;
+import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.MessageHandler;
 import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
@@ -120,8 +120,8 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     }
 
     @Override
-    public void schedulePeriodicTasks(MessageConnection connManager, ScheduledExecutorService scheduledExecutorService) {
-        super.schedulePeriodicTasks(connManager, scheduledExecutorService);
+    public void schedulePeriodicTasks(MessageConnection messageConnection, ScheduledExecutorService scheduledExecutorService) {
+        super.schedulePeriodicTasks(messageConnection, scheduledExecutorService);
         ScheduledTask incrementalIndexingTask = getIncrementalIndexingTask();
         scheduledExecutorService.scheduleAtFixedRate(
                 incrementalIndexingTask.command,

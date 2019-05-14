@@ -1,8 +1,9 @@
 package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.GetResponse;
-import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.BulkMessageConsumer;
+import org.janelia.messaging.core.GenericMessage;
+import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.utils.MessagingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,12 @@ public class BulkMessageConsumerImpl extends AbstractMessageConsumer implements 
     private static final Logger LOG = LoggerFactory.getLogger(BulkMessageConsumerImpl.class);
 
     public BulkMessageConsumerImpl(MessageConnection messageConnection) {
-        super(messageConnection);
+        super((MessageConnectionImpl) messageConnection);
+    }
+
+    @Override
+    public void disconnect() {
+        // do nothing
     }
 
     @Override
@@ -34,11 +40,11 @@ public class BulkMessageConsumerImpl extends AbstractMessageConsumer implements 
             @Override
             public boolean tryAdvance(Consumer<? super GenericMessage> action) {
                 try {
-                    if (channel == null) {
+                    if (!messageConnection.isOpen()) {
                         LOG.info("The message channel was either closed or never opened");
                         return false;
                     }
-                    lastResponse = channel.basicGet(getQueue(), isAutoAck());
+                    lastResponse = messageConnection.channel.basicGet(getQueue(), isAutoAck());
                     if (lastResponse == null) {
                         return false;
                     }

@@ -3,7 +3,7 @@ package org.janelia.messaging.broker;
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
-import org.janelia.messaging.core.impl.MessageConnection;
+import org.janelia.messaging.core.impl.MessageConnectionImpl;
 import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +31,7 @@ public class MessageBroker {
     Integer consumerThreads = CONSUMERS_THREADPOOL_SIZE;
 
     private void startBroker(BrokerAdapter brokerAdapter) {
-
-        MessageConnection messageConnection = new MessageConnection();
+        MessageConnectionImpl messageConnection = new MessageConnectionImpl();
         messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, consumerThreads);
 
         scheduleQueueBackups(messageConnection, brokerAdapter, 5);
@@ -64,7 +63,7 @@ public class MessageBroker {
      * @param connManager
      * @param threadPoolSize
      */
-    private void scheduleQueueBackups(MessageConnection connManager,
+    private void scheduleQueueBackups(MessageConnectionImpl connManager,
                                       BrokerAdapter brokerAdapter,
                                       int threadPoolSize) {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(threadPoolSize);

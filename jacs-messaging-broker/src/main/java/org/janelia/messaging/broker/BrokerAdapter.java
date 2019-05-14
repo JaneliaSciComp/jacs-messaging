@@ -1,10 +1,10 @@
 package org.janelia.messaging.broker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
-import org.janelia.messaging.core.impl.MessageConnection;
 import org.janelia.messaging.core.GenericMessage;
+import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.MessageHandler;
+import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +43,8 @@ public abstract class BrokerAdapter {
 
     public abstract Set<String> getMessageHeaders();
 
-    public void schedulePeriodicTasks(MessageConnection connManager, ScheduledExecutorService scheduledExecutorService) {
-        ScheduledTask queueBackTask = getBackupQueueTask(connManager);
+    public void schedulePeriodicTasks(MessageConnection messageConnection, ScheduledExecutorService scheduledExecutorService) {
+        ScheduledTask queueBackTask = getBackupQueueTask(messageConnection);
         scheduledExecutorService.scheduleAtFixedRate(
                 queueBackTask.command,
                 queueBackTask.initialDelay,
@@ -52,7 +52,7 @@ public abstract class BrokerAdapter {
                 queueBackTask.timeUnit);
     }
 
-    private ScheduledTask getBackupQueueTask(MessageConnection connManager) {
+    private ScheduledTask getBackupQueueTask(MessageConnection messageConnection) {
         // get next Saturday
         Calendar c = Calendar.getInstance();
         long startMillis = c.getTimeInMillis();
@@ -70,7 +70,7 @@ public abstract class BrokerAdapter {
             try {
                 LOG.info ("starting scheduled backup to {}", currentBackupLocation);
                 ObjectMapper mapper = new ObjectMapper();
-                BulkMessageConsumerImpl consumer = new BulkMessageConsumerImpl(connManager);
+                BulkMessageConsumerImpl consumer = new BulkMessageConsumerImpl(messageConnection);
                 consumer.connectTo(adapterArgs.backupQueue);
                 consumer.setAutoAck(true);
                 List<GenericMessage> messageList = consumer.retrieveMessages(getMessageHeaders())
