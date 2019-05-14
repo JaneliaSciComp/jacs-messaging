@@ -2,6 +2,7 @@ package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.MessageSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ public class MessageSenderImpl implements MessageSender {
 
     @Override
     public void connectTo(String exchange, String routingKey) {
-        if (messageConnection.connection != null) {
+        if (messageConnection.connection != null && StringUtils.isNotBlank(exchange)) {
             try {
                 this.channel = messageConnection.connection.createChannel();
                 this.exchange = exchange;
