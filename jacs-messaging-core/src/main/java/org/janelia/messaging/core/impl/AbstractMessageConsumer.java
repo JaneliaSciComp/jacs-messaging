@@ -1,11 +1,12 @@
 package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.MessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * Created by schauderd on 11/2/17.
@@ -14,14 +15,13 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractMessageConsumer.class);
 
-    private final ConnectionManager connectionManager;
-    Connection connection;
+    private final MessageConnection messageConnection;
     Channel channel;
     private String queue;
     private boolean autoAck;
 
-    public AbstractMessageConsumer(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public AbstractMessageConsumer(MessageConnection messageConnection) {
+        this.messageConnection = messageConnection;
     }
 
     public boolean isAutoAck() {
@@ -38,44 +38,38 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
     }
 
     @Override
-    public void connect(String host,
-                        String user,
-                        String password,
-                        String queueName,
-                        int threadPoolSize) {
-        openChannel(host, user, password, threadPoolSize);
-        this.queue = queueName;
-    }
-
-    @Override
-    public void bindAndConnect(String host,
-                               String user,
-                               String password,
-                               String exchangeName,
-                               String routingKey,
-                               int threadPoolSize) {
-        openChannel(host, user, password, threadPoolSize);
-        try {
-            LOG.debug("Connect to exchange {}", exchangeName);
-            this.queue = channel.queueDeclare().getQueue();
-            channel.queueBind(this.queue, exchangeName, StringUtils.defaultIfBlank(routingKey, ""));
-        } catch (Exception e) {
-            LOG.error("Error connecting to exchange {}", exchangeName);
-            throw new IllegalStateException("Error connecting to " + exchangeName, e);
+    public void connectTo(String queueName) {
+        if (messageConnection.connection != null) {
+            try {
+                LOG.info("Connect to queue {}", queueName);
+                this.channel = messageConnection.connection.createChannel();
+                this.queue = queueName;
+            } catch (IOException e) {
+                LOG.error("Error connecting to {}", queueName, e);
+                throw new IllegalStateException("Error connecting to " + queueName, e);
+            }
         }
     }
 
-    private void openChannel(String host,
-                             String user,
-                             String password,
-                             int threadPoolSize) {
-        try {
-            LOG.info("Open connection to {} as user {}", host, user);
-            connection = connectionManager.openConnection(host, user, password, threadPoolSize);
-            channel = connection.createChannel();
-        } catch (Exception e) {
-            LOG.error("Error connecting to host {} with user {}", host, user);
-            throw new IllegalStateException("Error connecting to host " + host, e);
+    @Override
+    public void bindAndConnectTo(String exchangeName, String routingKey, String queueName) {
+        if (messageConnection.connection != null) {
+            if (messageConnection.connection != null) {
+                try {
+                    this.channel = messageConnection.connection.createChannel();
+                    if (StringUtils.isBlank(queueName)) {
+                        this.queue = channel.queueDeclare().getQueue();
+                        LOG.info("Connect to temporary queue {} bound to {} with routingKey {}", this.queue, exchangeName, routingKey);
+                    } else {
+                        this.queue = queueName;
+                        LOG.info("Connect to queue {} bound to {} with routingKey {}", this.queue, exchangeName, routingKey);
+                    }
+                    channel.queueBind(this.queue, exchangeName, StringUtils.defaultIfBlank(routingKey, ""));
+                } catch (IOException e) {
+                    LOG.error("Error connecting and binding to exchange {}", exchangeName, e);
+                    throw new IllegalStateException("Error connecting to " + exchangeName, e);
+                }
+            }
         }
     }
 
@@ -89,11 +83,6 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
                 LOG.error("Error disconnecting from the queue {}", queue, e);
             } finally {
                 channel = null;
-                try {
-                    connection.close();
-                } catch (Exception ignore) {
-                }
-                connection = null;
             }
         }
     }

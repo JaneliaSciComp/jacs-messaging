@@ -23,8 +23,8 @@ public class BulkMessageConsumerImpl extends AbstractMessageConsumer implements 
 
     private static final Logger LOG = LoggerFactory.getLogger(BulkMessageConsumerImpl.class);
 
-    public BulkMessageConsumerImpl(ConnectionManager connectionManager) {
-        super(connectionManager);
+    public BulkMessageConsumerImpl(MessageConnection messageConnection) {
+        super(messageConnection);
     }
 
     @Override

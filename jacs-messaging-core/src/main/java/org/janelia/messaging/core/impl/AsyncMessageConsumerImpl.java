@@ -13,8 +13,8 @@ import java.io.IOException;
 public class AsyncMessageConsumerImpl extends AbstractMessageConsumer implements AsyncMessageConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncMessageConsumer.class);
 
-    public AsyncMessageConsumerImpl(ConnectionManager connectionManager) {
-        super(connectionManager);
+    public AsyncMessageConsumerImpl(MessageConnection messageConnection) {
+        super(messageConnection);
     }
 
     public AsyncMessageConsumerImpl setupMessageHandler(MessageHandler messageHandler){

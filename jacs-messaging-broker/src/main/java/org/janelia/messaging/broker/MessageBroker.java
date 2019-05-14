@@ -3,7 +3,7 @@ package org.janelia.messaging.broker;
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
-import org.janelia.messaging.core.impl.ConnectionManager;
+import org.janelia.messaging.core.impl.MessageConnection;
 import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,36 +19,33 @@ import java.util.concurrent.ScheduledExecutorService;
 @CommandLine.Command
 public class MessageBroker {
     private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
+    private static final int CONSUMERS_THREADPOOL_SIZE = 0;
 
-    private void startBroker(ConnectionManager connManager,
-                             BrokerAdapter brokerAdapter) {
+    @CommandLine.Option(names = {"-ms"}, description = "Messaging server", required = true)
+    String messagingServer;
+    @CommandLine.Option(names = {"-u"}, description = "Messaging user")
+    String messagingUser;
+    @CommandLine.Option(names = {"-p"}, description = "Messaging password")
+    String messagingPassword;
+    @CommandLine.Option(names = {"-consumerThreads"}, description = "Consumers thread pool size")
+    Integer consumerThreads = CONSUMERS_THREADPOOL_SIZE;
 
-        scheduleQueueBackups(connManager, brokerAdapter, 5);
+    private void startBroker(BrokerAdapter brokerAdapter) {
 
-        MessageSenderImpl replySuccessSender = new MessageSenderImpl(connManager);
-        replySuccessSender.connect(
-                brokerAdapter.adapterArgs.messagingServer,
-                brokerAdapter.adapterArgs.messagingUser,
-                brokerAdapter.adapterArgs.messagingPassword,
-                brokerAdapter.adapterArgs.replySuccessQueue,
-                "");
+        MessageConnection messageConnection = new MessageConnection();
+        messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, consumerThreads);
 
-        MessageSenderImpl replyErrorSender = new MessageSenderImpl(connManager);
-        replyErrorSender.connect(
-                brokerAdapter.adapterArgs.messagingServer,
-                brokerAdapter.adapterArgs.messagingUser,
-                brokerAdapter.adapterArgs.messagingPassword,
-                brokerAdapter.adapterArgs.replyErrorQueue,
-                "");
+        scheduleQueueBackups(messageConnection, brokerAdapter, 5);
 
-        AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(connManager);
+        MessageSenderImpl replySuccessSender = new MessageSenderImpl(messageConnection);
+        replySuccessSender.connectTo(brokerAdapter.adapterArgs.replySuccessExchange, "");
+
+        MessageSenderImpl replyErrorSender = new MessageSenderImpl(messageConnection);
+        replyErrorSender.connectTo(brokerAdapter.adapterArgs.replyErrorExchange, "");
+
+        AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(messageConnection);
         messageConsumer.setAutoAck(brokerAdapter.useAutoAck());
-        messageConsumer.connect(
-                brokerAdapter.adapterArgs.messagingServer,
-                brokerAdapter.adapterArgs.messagingUser,
-                brokerAdapter.adapterArgs.messagingPassword,
-                brokerAdapter.adapterArgs.receiveQueue,
-                brokerAdapter.adapterArgs.consumerThreads);
+        messageConsumer.connectTo(brokerAdapter.adapterArgs.receiveQueue);
         messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
                     replySuccessSender.sendMessage(messageHeaders, messageBody);
@@ -67,7 +64,7 @@ public class MessageBroker {
      * @param connManager
      * @param threadPoolSize
      */
-    private void scheduleQueueBackups(ConnectionManager connManager,
+    private void scheduleQueueBackups(MessageConnection connManager,
                                       BrokerAdapter brokerAdapter,
                                       int threadPoolSize) {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(threadPoolSize);
@@ -94,7 +91,7 @@ public class MessageBroker {
 
         BrokerAdapterFactory<?> ba = mb.parseArgs(args);
         if (ba != null) {
-            mb.startBroker(ConnectionManager.getInstance(), ba.createBrokerAdapter());
+            mb.startBroker(ba.createBrokerAdapter());
         }
     }
 

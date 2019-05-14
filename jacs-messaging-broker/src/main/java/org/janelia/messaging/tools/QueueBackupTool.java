@@ -1,7 +1,7 @@
 package org.janelia.messaging.tools;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.janelia.messaging.core.impl.ConnectionManager;
+import org.janelia.messaging.core.impl.MessageConnection;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
 import org.slf4j.Logger;
@@ -56,11 +56,12 @@ public class QueueBackupTool {
             if (Files.notExists(backupLocationPath) && backupLocationPath.getParent() != null) {
                 Files.createDirectories(backupLocationPath.getParent());
             }
-            ConnectionManager connManager = ConnectionManager.getInstance();
+            MessageConnection messageConnection = new MessageConnection();
+            messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, 0);
 
-            BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(connManager);
+            BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(messageConnection);
             messageConsumer.setAutoAck(false);
-            messageConsumer.connect(messagingServer, messagingUser, messagingPassword, queueName, 0);
+            messageConsumer.connectTo(queueName);
 
             List<GenericMessage> messageList = messageConsumer.retrieveMessages(null)
                     .collect(Collectors.toList());

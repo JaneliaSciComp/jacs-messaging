@@ -2,11 +2,11 @@ package org.janelia.messaging.core.impl;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import org.janelia.messaging.core.MessageSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -15,31 +15,27 @@ import java.util.Map;
 public class MessageSenderImpl implements MessageSender {
     private static final Logger LOG = LoggerFactory.getLogger(MessageSenderImpl.class);
 
-    private final ConnectionManager connectionManager;
+    private final MessageConnection messageConnection;
 
-    private Connection connection;
     private Channel channel;
     private String exchange;
     private String routingKey;
 
-    public MessageSenderImpl(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public MessageSenderImpl(MessageConnection messageConnection) {
+        this.messageConnection = messageConnection;
     }
 
     @Override
-    public void connect(String host,
-                        String user,
-                        String password,
-                        String exchange,
-                        String routingKey) {
-        try {
-            this.exchange = exchange;
-            this.routingKey = routingKey;
-            connection = connectionManager.openConnection(host, user, password, 0);
-            channel = connection.createChannel();
-        } catch (Exception e) {
-            LOG.error("Error connecting to {} with routingkey {}", exchange, routingKey, e);
-            throw new IllegalStateException("Error connecting to " + exchange, e);
+    public void connectTo(String exchange, String routingKey) {
+        if (messageConnection.connection != null) {
+            try {
+                this.channel = messageConnection.connection.createChannel();
+                this.exchange = exchange;
+                this.routingKey = routingKey;
+            } catch (IOException e) {
+                LOG.error("Error connecting to {} with routingkey {}", exchange, routingKey, e);
+                throw new IllegalStateException("Error connecting to " + exchange, e);
+            }
         }
     }
 
@@ -53,11 +49,6 @@ public class MessageSenderImpl implements MessageSender {
                 LOG.error("Error disconnecting from the exchange {}", exchange, e);
             } finally {
                 channel = null;
-                try {
-                    connection.close();
-                } catch (Exception ignore) {
-                }
-                connection = null;
             }
         }
     }
