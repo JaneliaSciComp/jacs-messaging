@@ -45,6 +45,9 @@ dependencies {
         JAI_CORE_LIB = "javax.media:jai-core:1.1.3"
         JAI_CODEC_LIB = "com.sun.media:jai-codec:1.1.3"
 
+        // scientific computing
+        JAMA_LIB = "gov.nist.math:jama:1.0.3"
+
         // search
         SOLR_VERSION = "3.6.2"
         SOLR_SEARCH_LIB = "org.apache.solr:solr-solrj:${SOLR_VERSION}"

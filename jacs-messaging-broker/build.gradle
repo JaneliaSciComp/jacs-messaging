@@ -15,6 +15,9 @@ project(":jacs-messaging-broker") {
                        JACKSON_DATABIND_LIB,
                        JACKSON_JAXRS_JSON_PROVIDER,
                        JACS_MODEL_CORE_LIB,
+                       JAI_CORE_LIB,
+                       JAI_CODEC_LIB,
+                       JAMA_LIB,
                        JAX_RS_JERSEY_CLIENT_LIB,
                        JAX_RS_JERSEY_APACHE_CONNECTOR_LIB,
                        JAX_RS_JERSEY_MEDIA_JSON_LIB,
@@ -53,7 +56,6 @@ task brokerJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
     with jar
 }
 
-
 task queueBackupJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
     manifest {
         attributes 'Implementation-Title': 'Shared Workspace Backup',
@@ -61,6 +63,21 @@ task queueBackupJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
                    'Main-Class': 'org.janelia.messaging.tools.QueueBackupTool'
     }
     archiveBaseName = "queueBackup"
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    with jar
+}
+
+task neuronRecoveryJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
+    manifest {
+        attributes 'Implementation-Title': 'Shared Workspace Backup',
+                   'Implementation-Version': version,
+                   'Main-Class': 'org.janelia.messaging.tools.NeuronRecoveryTool'
+    }
+    archiveBaseName = "neuronRecovery"
     from {
         configurations.runtimeClasspath.collect {
             it.isDirectory() ? it : zipTree(it)
