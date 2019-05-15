@@ -24,32 +24,34 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     private static final int INDEXING_INTERVAL_IN_SECONDS = 60;
 
     private final IndexingRestClient indexingRestClient;
-    private final DedupedDelayQueue<Reference> docsToIndex;
-    private final DedupedDelayQueue<Long> docIdsToRemove;
+    private final DedupedDelayWithCallbackQueue<Reference> docsToIndex;
+    private final DedupedDelayWithCallbackQueue<Long> docIdsToRemove;
     private final NavigableMap<Long, DedupedDelayQueue<Long>> docDescendantsToAdd;
 
-    public IndexingBrokerAdapter(BrokerAdapterArgs adapterArgs, String indexingServerURL) {
+    IndexingBrokerAdapter(BrokerAdapterArgs adapterArgs, String indexingServerURL) {
         super(adapterArgs);
         this.indexingRestClient = new IndexingRestClient(indexingServerURL);
 
-        docsToIndex = new DedupedDelayQueue<Reference>() {
+        docsToIndex = new DedupedDelayWithCallbackQueue<Reference>() {
             {
                 setWorkItemDelay(WORK_DELAY_MILLIS);
             }
 
             @Override
             void processList(List<Reference> workItems) {
+                LOG.info("Index items {}", workItems);
                 indexingRestClient.indexDocReferences(workItems);
             }
         };
 
-        docIdsToRemove = new DedupedDelayQueue<Long>() {
+        docIdsToRemove = new DedupedDelayWithCallbackQueue<Long>() {
             {
                 setWorkItemDelay(WORK_DELAY_MILLIS);
             }
 
             @Override
             void processList(List<Long> workItems) {
+                LOG.info("Remove items {}", workItems);
                 indexingRestClient.remmoveDocIds(workItems);
             }
         };
@@ -59,30 +61,25 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
 
     @Override
     public MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback, MessageHandler.HandlerCallback errorCallback) {
+        docsToIndex.setProcessingCompleteCallback(workItems -> {
+            Map<String, Object> messageHeaders = new LinkedHashMap<>();
+            messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
+            messageHeaders.put(IndexingMessageHeaders.OBJECT_REFS,
+                    workItems.stream().map(Reference::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+            );
+            successCallback.callback(messageHeaders, null);
+        });
+        docIdsToRemove.setProcessingCompleteCallback(workItems -> {
+            Map<String, Object> messageHeaders = new LinkedHashMap<>();
+            messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
+            messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
+                    workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+            );
+            successCallback.callback(messageHeaders, null);
+        });
         return new IndexingHandler(
-                new DedupedDelayQueueWrapper<Reference>(docsToIndex) {
-                    @Override
-                    void processList(List<Reference> workItems) {
-                        LOG.info("Index items {}", workItems);
-                        super.processList(workItems);
-                        Map<String, Object> messageHeaders = new LinkedHashMap<>();
-                        messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
-                        messageHeaders.put(IndexingMessageHeaders.OBJECT_REFS, workItems);
-                        successCallback.callback(messageHeaders, null);
-                    }
-                },
-                new DedupedDelayQueueWrapper<Long>(docIdsToRemove) {
-                    @Override
-                    void processList(List<Long> workItems) {
-                        LOG.info("Remove items {}", workItems);
-                        super.processList(workItems);
-                        Map<String, Object> messageHeaders = new LinkedHashMap<>();
-                        messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
-                        messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS, workItems);
-                        successCallback.callback(messageHeaders, null);
-                    }
-                }
-                ,
+                docsToIndex,
+                docIdsToRemove,
                 docDescendantsToAdd,
                 (ancestorId) -> new DedupedDelayQueue<Long>() {
                     {
@@ -104,10 +101,11 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                         indexingRestClient.addAncestorToDocs(ancestorId, workItems);
                         Map<String, Object> messageHeaders = new LinkedHashMap<>();
                         messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
-                        messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS, workItems);
+                        messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
+                                workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+                        );
                         messageHeaders.put(IndexingMessageHeaders.ANCESTOR_ID, ancestorId);
                         successCallback.callback(messageHeaders, null);
-
                     }
                 });
     }

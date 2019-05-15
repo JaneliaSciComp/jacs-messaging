@@ -9,7 +9,7 @@ public class NeuronBrokerAdapter extends BrokerAdapter {
     final String persistenceServer;
     final String sharedSpaceOwner;
 
-    public NeuronBrokerAdapter(BrokerAdapterArgs adapterArgs, String persistenceServer, String sharedSpaceOwner) {
+    NeuronBrokerAdapter(BrokerAdapterArgs adapterArgs, String persistenceServer, String sharedSpaceOwner) {
         super(adapterArgs);
         this.persistenceServer = persistenceServer;
         this.sharedSpaceOwner = sharedSpaceOwner;

@@ -1,9 +1,10 @@
 package org.janelia.messaging.tools;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.janelia.messaging.core.impl.MessageConnectionImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
+import org.janelia.messaging.core.impl.MessageConnectionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
@@ -13,7 +14,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,8 +27,6 @@ public class QueueBackupTool {
     String messagingUser;
     @CommandLine.Option(names = {"-p"}, description = "Messaging password")
     String messagingPassword;
-    @CommandLine.Option(names = {"-filter"}, description = "Message filter")
-    String filter;
     @CommandLine.Option(names = {"-queueName"}, description = "Name of the queue to download")
     String queueName;
     @CommandLine.Option(names = {"-backupLocation"}, description = "Backup location")
@@ -52,12 +50,14 @@ public class QueueBackupTool {
 
     private void backupQueue() {
         try {
-            Path backupLocationPath = Paths.get(backupLocation);
-            if (Files.notExists(backupLocationPath) && backupLocationPath.getParent() != null) {
-                Files.createDirectories(backupLocationPath.getParent());
+            if (StringUtils.isNotBlank(backupLocation)) {
+                Path backupLocationPath = Paths.get(backupLocation);
+                if (Files.notExists(backupLocationPath) && backupLocationPath.getParent() != null) {
+                    Files.createDirectories(backupLocationPath.getParent());
+                }
             }
             MessageConnectionImpl messageConnection = new MessageConnectionImpl();
-            messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, 0);
+            messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, 1);
 
             BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(messageConnection);
             messageConsumer.setAutoAck(false);
@@ -67,9 +67,19 @@ public class QueueBackupTool {
             LOG.info("Retrieved {} messages to backup at {}", messageList.size(), backupLocation);
 
             ObjectMapper mapper = new ObjectMapper();
-            try (OutputStream backupStream = new FileOutputStream(backupLocation)) {
+            OutputStream backupStream;
+            if (StringUtils.isNotBlank(backupLocation)) {
+                backupStream = new FileOutputStream(backupLocation);
+            } else {
+                backupStream = System.out;
+            }
+            try {
                 mapper.writeValue(backupStream, messageList);
-                LOG.info("Finished scheduled backup at {} after backing up {} messages", new Date(), messageList.size());
+                LOG.info("Finished retrieving {} from queue {} ", messageList.size(), queueName);
+            } finally {
+                if (StringUtils.isNotBlank(backupLocation)) {
+                    backupStream.close();
+                }
             }
         } catch (Exception e) {
             LOG.error("Error while backing up queue {} to {}", queueName, backupLocation, e);
@@ -81,6 +91,7 @@ public class QueueBackupTool {
         if (queueBackupToolTool.parseArgs(args)) {
             queueBackupToolTool.backupQueue();
         }
+        System.exit(0);
     }
 
 }
