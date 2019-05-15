@@ -191,11 +191,11 @@ public class MessageConnectionImpl implements MessageConnection {
         return StreamSupport.stream(messageSupplier, false);
     }
 
-    private Map<String, String> getMessageHeadersFromResponse(Map<String, Object> responseHeaders) {
-        Map<String, String> messageHeaders = new HashMap<>();
+    private Map<String, Object> getMessageHeadersFromResponse(Map<String, Object> responseHeaders) {
+        Map<String, Object> messageHeaders = new HashMap<>();
         if (responseHeaders != null) {
             // no filtering
-            responseHeaders.forEach((k, v) -> messageHeaders.put(k, MessagingUtils.valueAsString(v)));
+            responseHeaders.forEach((k, v) -> messageHeaders.put(k, MessagingUtils.getHeaderValue(responseHeaders, k)));
         }
         return messageHeaders;
     }

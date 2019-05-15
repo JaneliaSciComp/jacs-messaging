@@ -37,11 +37,23 @@ public class MessagingUtils {
     }
 
     public static String valueAsString(Object data) {
-        if (data != null) {
-            return LongStringHelper.asLongString(((LongString)data).getBytes()).toString();
-        } else {
+        if (data == null) {
             return null;
+        } else if (data instanceof LongString) {
+            return LongStringHelper.asLongString(((LongString) data).getBytes()).toString();
+        } else if (data instanceof String) {
+            return (String) data;
+        } else {
+            return data.toString();
         }
     }
 
+    public static Object getHeaderValue(Map<String, Object> headers, String header) {
+        Object value = headers.get(header);
+        if (value instanceof LongString) {
+            return valueAsString(value);
+        } else {
+            return value;
+        }
+    }
 }

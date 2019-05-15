@@ -10,16 +10,16 @@ import java.util.Map;
  */
 public class GenericMessage {
     private final byte[] body;
-    private final Map<String, String> headers;
+    private final Map<String, Object> headers;
 
     @JsonCreator
-    public GenericMessage(@JsonProperty("headers") Map<String, String> headers,
+    public GenericMessage(@JsonProperty("headers") Map<String, Object> headers,
                           @JsonProperty("body") byte[] body) {
         this.headers = headers;
         this.body = body;
     }
 
-    public Map<String, String> getHeaders() {
+    public Map<String, Object> getHeaders() {
         return headers;
     }
 

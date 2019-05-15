@@ -34,7 +34,7 @@ public class MessageBroker {
         MessageConnectionImpl messageConnection = new MessageConnectionImpl();
         messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, consumerThreads);
 
-        scheduleQueueBackups(messageConnection, brokerAdapter, 5);
+        schedulePeriodicTasks(messageConnection, brokerAdapter, 5);
 
         MessageSenderImpl replySuccessSender = new MessageSenderImpl(messageConnection);
         replySuccessSender.connectTo(brokerAdapter.adapterArgs.replySuccessExchange, "");
@@ -63,9 +63,9 @@ public class MessageBroker {
      * @param connManager
      * @param threadPoolSize
      */
-    private void scheduleQueueBackups(MessageConnectionImpl connManager,
-                                      BrokerAdapter brokerAdapter,
-                                      int threadPoolSize) {
+    private void schedulePeriodicTasks(MessageConnectionImpl connManager,
+                                       BrokerAdapter brokerAdapter,
+                                       int threadPoolSize) {
         ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(threadPoolSize);
         brokerAdapter.schedulePeriodicTasks(connManager, scheduledExecutorService);
     }

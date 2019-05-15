@@ -57,6 +57,7 @@ public class IndexingHandler implements MessageHandler {
         Long ancestorId =  MessagingUtils.getHeaderAsLong(messageHeaders, IndexingMessageHeaders.ANCESTOR_ID);
         // map descendants to the ancestor and only add the ancestor to its descendants after the work delay
         synchronized (docDescendantsToAdd) {
+            LOG.info("Queue add ancestor {} to {}", ancestorId, objectId);
             DedupedDelayQueue<Long> docDescendants;
             if (docDescendantsToAdd.get(ancestorId) == null) {
                 docDescendants = docDescendantsQueueSupplier.apply(ancestorId);
@@ -69,6 +70,7 @@ public class IndexingHandler implements MessageHandler {
 
     private void handleDeleteDoc(Map<String, Object> messageHeaders) {
         Long objectId = MessagingUtils.getHeaderAsLong(messageHeaders, IndexingMessageHeaders.OBJECT_ID);
+        LOG.info("Queue delete {}", objectId);
         docIdsToRemove.addWorkItem(objectId);
     }
 
@@ -76,6 +78,7 @@ public class IndexingHandler implements MessageHandler {
         Long objectId = MessagingUtils.getHeaderAsLong(messageHeaders, IndexingMessageHeaders.OBJECT_ID);
         if (objectId != null) {
             String objectClass = MessagingUtils.getHeaderAsString(messageHeaders, IndexingMessageHeaders.OBJECT_CLASS);
+            LOG.info("Queue update {}:{}", objectClass, objectId);
             docsToIndex.addWorkItem(Reference.createFor(objectClass, objectId));
         }
     }
