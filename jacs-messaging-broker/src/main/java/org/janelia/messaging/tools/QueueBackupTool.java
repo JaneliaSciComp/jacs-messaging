@@ -57,7 +57,7 @@ public class QueueBackupTool {
                 }
             }
             MessageConnectionImpl messageConnection = new MessageConnectionImpl();
-            messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, 1);
+            messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, 0);
 
             BulkMessageConsumerImpl messageConsumer = new BulkMessageConsumerImpl(messageConnection);
             messageConsumer.setAutoAck(false);
@@ -81,6 +81,7 @@ public class QueueBackupTool {
                     backupStream.close();
                 }
             }
+            messageConnection.closeConnection();
         } catch (Exception e) {
             LOG.error("Error while backing up queue {} to {}", queueName, backupLocation, e);
         }

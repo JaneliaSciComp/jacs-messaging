@@ -59,15 +59,15 @@ public class MessageConnectionImpl implements MessageConnection {
     }
 
     public void closeConnection() {
-        if (channel != null) {
-            try {
-                this.connection.close();
-            } catch (IOException ignore) {
-            } finally {
-                channel = null;
-            }
-        }
         if (connection != null) {
+            if (channel != null) {
+                try {
+                    this.channel.close();
+                } catch (Exception ignore) {
+                } finally {
+                    channel = null;
+                }
+            }
             try {
                 this.connection.close();
             } catch (IOException ignore) {
