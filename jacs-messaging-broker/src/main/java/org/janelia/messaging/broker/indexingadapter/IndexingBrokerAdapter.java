@@ -1,6 +1,5 @@
 package org.janelia.messaging.broker.indexingadapter;
 
-import com.google.common.collect.ImmutableSet;
 import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.broker.BrokerAdapterArgs;
 import org.janelia.messaging.core.MessageConnection;
@@ -13,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -108,15 +106,6 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
 
                     }
                 });
-    }
-
-    @Override
-    public Set<String> getMessageHeaders() {
-        return ImmutableSet.of(
-                IndexingMessageHeaders.OBJECT_CLASS,
-                IndexingMessageHeaders.OBJECT_ID,
-                IndexingMessageHeaders.ANCESTOR_ID
-        );
     }
 
     @Override

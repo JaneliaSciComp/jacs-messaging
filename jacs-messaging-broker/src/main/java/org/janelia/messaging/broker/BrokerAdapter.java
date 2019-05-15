@@ -13,7 +13,6 @@ import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -40,8 +39,6 @@ public abstract class BrokerAdapter {
 
     public abstract MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback,
                                                      MessageHandler.HandlerCallback errorCallback);
-
-    public abstract Set<String> getMessageHeaders();
 
     public void schedulePeriodicTasks(MessageConnection messageConnection, ScheduledExecutorService scheduledExecutorService) {
         ScheduledTask queueBackTask = getBackupQueueTask(messageConnection);
@@ -73,8 +70,7 @@ public abstract class BrokerAdapter {
                 BulkMessageConsumerImpl consumer = new BulkMessageConsumerImpl(messageConnection);
                 consumer.connectTo(adapterArgs.backupQueue);
                 consumer.setAutoAck(true);
-                List<GenericMessage> messageList = consumer.retrieveMessages(getMessageHeaders())
-                        .collect(Collectors.toList());
+                List<GenericMessage> messageList = consumer.retrieveMessages().collect(Collectors.toList());
                 LOG.info("Retrieved {} messages to backup at {}", messageList.size(), currentBackupLocation);
                 try (OutputStream backupStream = new FileOutputStream(currentBackupLocation)) {
                     mapper.writeValue(backupStream, messageList);

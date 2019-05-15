@@ -45,7 +45,7 @@ public class MessageBroker {
         AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(messageConnection);
         messageConsumer.setAutoAck(brokerAdapter.useAutoAck());
         messageConsumer.connectTo(brokerAdapter.adapterArgs.receiveQueue);
-        messageConsumer.setupMessageHandler(brokerAdapter.getMessageHandler(
+        messageConsumer.subscribe(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
                     replySuccessSender.sendMessage(messageHeaders, messageBody);
                 },

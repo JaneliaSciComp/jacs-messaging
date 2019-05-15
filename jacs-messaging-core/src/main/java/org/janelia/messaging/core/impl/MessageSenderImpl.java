@@ -1,6 +1,5 @@
 package org.janelia.messaging.core.impl;
 
-import com.rabbitmq.client.AMQP;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.MessageSender;
@@ -15,13 +14,13 @@ import java.util.Map;
 public class MessageSenderImpl implements MessageSender {
     private static final Logger LOG = LoggerFactory.getLogger(MessageSenderImpl.class);
 
-    private final MessageConnectionImpl messageConnection;
+    private final MessageConnection messageConnection;
 
     private String exchange;
     private String routingKey;
 
     public MessageSenderImpl(MessageConnection messageConnection) {
-        this.messageConnection = (MessageConnectionImpl) messageConnection;
+        this.messageConnection = messageConnection;
     }
 
     @Override
@@ -41,13 +40,10 @@ public class MessageSenderImpl implements MessageSender {
 
     @Override
     public void sendMessage(Map<String, Object> messageHeaders, byte[] messageBody) {
-        if (messageConnection.isOpen() && StringUtils.isNotBlank(exchange)) {
+        if (StringUtils.isNotBlank(exchange)) {
             try {
                 LOG.info("Send message {} to {} with routingKey {}", messageHeaders, exchange, routingKey);
-                messageConnection.channel.basicPublish(exchange, routingKey,
-                        new AMQP.BasicProperties.Builder()
-                                .headers(messageHeaders)
-                                .build(), messageBody);
+                messageConnection.publish(exchange, routingKey, messageHeaders, messageBody);
             } catch (Exception e) {
                 LOG.error("Error publishing message {} to the exchange {} with routingKey {}", messageHeaders, exchange, routingKey);
             }

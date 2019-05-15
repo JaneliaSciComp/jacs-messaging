@@ -1,15 +1,26 @@
 package org.janelia.messaging.core.impl;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.GetResponse;
 import org.apache.commons.lang3.StringUtils;
+import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageConnection;
+import org.janelia.messaging.core.MessageHandler;
+import org.janelia.messaging.utils.MessagingUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Spliterator;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Created by schauderd on 11/2/17.
@@ -87,6 +98,106 @@ public class MessageConnectionImpl implements MessageConnection {
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void publish(String exchange, String routingKey, Map<String, Object> headers, byte[] body) {
+        if (isOpen()) {
+            try {
+                LOG.info("Send message {} to {} with routingKey {}", headers, exchange, routingKey);
+                channel.basicPublish(exchange, routingKey,
+                        new AMQP.BasicProperties.Builder()
+                                .headers(headers)
+                                .build(), body);
+            } catch (Exception e) {
+                LOG.error("Error publishing message {} to the exchange {} with routingKey {}", headers, exchange, routingKey);
+            }
+        }
+    }
+
+    @Override
+    public String subscribe(String queue, boolean ack, MessageHandler messageHandler) {
+        if (isOpen()) {
+            try {
+                LOG.info("Connect to queue {} using autoAck set to {}", queue, ack);
+                return channel.basicConsume(queue, ack,
+                        (consumerTag, delivery) -> messageHandler.handleMessage(delivery.getProperties().getHeaders(), delivery.getBody()),
+                        (consumerTag) -> messageHandler.cancelMessage(consumerTag));
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void cancelSubscription(String subscriptionTag) {
+        if (isOpen() && StringUtils.isNotBlank(subscriptionTag)) {
+            try {
+                LOG.info("Cancel subscription {}", subscriptionTag);
+                channel.basicCancel(subscriptionTag);
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    @Override
+    public Stream<GenericMessage> retrieveMessages(String queue, boolean ack) {
+        Spliterator<GenericMessage> messageSupplier = new Spliterator<GenericMessage>() {
+            GetResponse lastResponse = null;
+            @Override
+            public boolean tryAdvance(Consumer<? super GenericMessage> action) {
+                try {
+                    if (!isOpen()) {
+                        LOG.info("The message channel was either closed or never opened");
+                        return false;
+                    }
+                    lastResponse = channel.basicGet(queue, ack);
+                    if (lastResponse == null) {
+                        return false;
+                    }
+                    GenericMessage message = new GenericMessage(
+                            getMessageHeadersFromResponse(lastResponse.getProps().getHeaders()),
+                            lastResponse.getBody());
+                    action.accept(message);
+                    return lastResponse.getMessageCount() > 0;
+                } catch (IOException e) {
+                    LOG.error("Error retrieving message from {}", queue, e);
+                    return false;
+                }
+            }
+
+            @Override
+            public Spliterator<GenericMessage> trySplit() {
+                return null; // no supported
+            }
+
+            @Override
+            public long estimateSize() {
+                if (lastResponse == null) {
+                    return Long.MAX_VALUE;
+                } else {
+                    return lastResponse.getMessageCount();
+                }
+            }
+
+            @Override
+            public int characteristics() {
+                return ORDERED;
+            }
+        };
+        return StreamSupport.stream(messageSupplier, false);
+    }
+
+    private Map<String, String> getMessageHeadersFromResponse(Map<String, Object> responseHeaders) {
+        Map<String, String> messageHeaders = new HashMap<>();
+        if (responseHeaders != null) {
+            // no filtering
+            responseHeaders.forEach((k, v) -> messageHeaders.put(k, MessagingUtils.valueAsString(v)));
+        }
+        return messageHeaders;
     }
 
 }

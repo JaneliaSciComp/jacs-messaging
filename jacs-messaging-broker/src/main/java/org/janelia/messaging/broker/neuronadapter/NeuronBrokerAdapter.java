@@ -1,11 +1,8 @@
 package org.janelia.messaging.broker.neuronadapter;
 
-import com.google.common.collect.ImmutableSet;
 import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.broker.BrokerAdapterArgs;
 import org.janelia.messaging.core.MessageHandler;
-
-import java.util.Set;
 
 public class NeuronBrokerAdapter extends BrokerAdapter {
 
@@ -28,13 +25,4 @@ public class NeuronBrokerAdapter extends BrokerAdapter {
         );
     }
 
-    @Override
-    public Set<String> getMessageHeaders() {
-        return ImmutableSet.of(
-                NeuronMessageHeaders.USER,
-                NeuronMessageHeaders.WORKSPACE,
-                NeuronMessageHeaders.TYPE,
-                NeuronMessageHeaders.METADATA
-        );
-    }
 }

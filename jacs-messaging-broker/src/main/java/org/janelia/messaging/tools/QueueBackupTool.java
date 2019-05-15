@@ -63,8 +63,7 @@ public class QueueBackupTool {
             messageConsumer.setAutoAck(false);
             messageConsumer.connectTo(queueName);
 
-            List<GenericMessage> messageList = messageConsumer.retrieveMessages(null)
-                    .collect(Collectors.toList());
+            List<GenericMessage> messageList = messageConsumer.retrieveMessages().collect(Collectors.toList());
             LOG.info("Retrieved {} messages to backup at {}", messageList.size(), backupLocation);
 
             ObjectMapper mapper = new ObjectMapper();

@@ -1,5 +1,6 @@
 package org.janelia.messaging.core.impl;
 
+import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.MessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,11 +12,11 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractMessageConsumer.class);
 
-    final MessageConnectionImpl messageConnection;
+    final MessageConnection messageConnection;
     private String queue;
     private boolean autoAck;
 
-    AbstractMessageConsumer(MessageConnectionImpl messageConnection) {
+    AbstractMessageConsumer(MessageConnection messageConnection) {
         this.messageConnection = messageConnection;
     }
 
