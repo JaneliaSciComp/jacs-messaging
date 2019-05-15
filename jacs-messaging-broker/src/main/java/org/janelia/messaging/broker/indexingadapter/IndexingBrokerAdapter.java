@@ -20,7 +20,8 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(IndexingBrokerAdapter.class);
     private static final int MAX_BATCH_SIZE = 10000;
     private static final int WORK_DELAY_MILLIS = 5000;
-    private static final int INDEXING_INTERVAL_IN_SECONDS = 15;
+    private static final int INITIAL_DELAY_IN_SECONDS = 60;
+    private static final int INDEXING_INTERVAL_IN_SECONDS = 60;
 
     private final IndexingRestClient indexingRestClient;
     private final DedupedDelayQueue<Reference> docsToIndex;
@@ -62,6 +63,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                 new DedupedDelayQueueWrapper<Reference>(docsToIndex) {
                     @Override
                     void processList(List<Reference> workItems) {
+                        LOG.info("Index items {}", workItems);
                         super.processList(workItems);
                         Map<String, Object> messageHeaders = new LinkedHashMap<>();
                         messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
@@ -72,6 +74,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                 new DedupedDelayQueueWrapper<Long>(docIdsToRemove) {
                     @Override
                     void processList(List<Long> workItems) {
+                        LOG.info("Remove items {}", workItems);
                         super.processList(workItems);
                         Map<String, Object> messageHeaders = new LinkedHashMap<>();
                         messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
@@ -97,6 +100,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
 
                     @Override
                     void processList(List<Long> workItems) {
+                        LOG.info("Add ancestor {} to {}", ancestorId, workItems);
                         indexingRestClient.addAncestorToDocs(ancestorId, workItems);
                         Map<String, Object> messageHeaders = new LinkedHashMap<>();
                         messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
@@ -135,7 +139,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
         };
         ScheduledTask scheduledTask = new ScheduledTask();
         scheduledTask.command = command;
-        scheduledTask.initialDelay = 1000;
+        scheduledTask.initialDelay = INITIAL_DELAY_IN_SECONDS;
         scheduledTask.interval = INDEXING_INTERVAL_IN_SECONDS;
         scheduledTask.timeUnit = TimeUnit.SECONDS;
         return scheduledTask;
