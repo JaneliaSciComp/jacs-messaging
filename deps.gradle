@@ -7,7 +7,7 @@ dependencies {
         LOGBACK_CORE_LIB = "ch.qos.logback:logback-core:${LOGBACK_VERSION}"
         LOGBACK_CLASSIC_LIB = "ch.qos.logback:logback-classic:${LOGBACK_VERSION}"
 
-        CMDLINE_ARG_LIB = "info.picocli:picocli:3.9.6"
+        CMDLINE_ARG_LIB = "com.beust:jcommander:1.72"
 
         GUAVA_LIB = "com.google.guava:guava:26.0-jre"
 

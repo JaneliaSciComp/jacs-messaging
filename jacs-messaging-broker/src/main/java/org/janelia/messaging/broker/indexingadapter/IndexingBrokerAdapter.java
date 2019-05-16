@@ -8,20 +8,19 @@ import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class IndexingBrokerAdapter extends BrokerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(IndexingBrokerAdapter.class);
     private static final int MAX_BATCH_SIZE = 10000;
     private static final int WORK_DELAY_MILLIS = 5000;
-    private static final int INITIAL_DELAY_IN_SECONDS = 60;
-    private static final int INDEXING_INTERVAL_IN_SECONDS = 60;
+    private static final long INITIAL_DELAY_IN_MILLIS = 15000L;
+    private static final long INDEXING_INTERVAL_IN_MILLIS = 15000L;
 
     private final IndexingRestClient indexingRestClient;
     private final DedupedDelayWithCallbackQueue<Reference> docsToIndex;
@@ -111,14 +110,11 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     }
 
     @Override
-    public void schedulePeriodicTasks(MessageConnection messageConnection, ScheduledExecutorService scheduledExecutorService) {
-        super.schedulePeriodicTasks(messageConnection, scheduledExecutorService);
-        ScheduledTask incrementalIndexingTask = getIncrementalIndexingTask();
-        scheduledExecutorService.scheduleAtFixedRate(
-                incrementalIndexingTask.command,
-                incrementalIndexingTask.initialDelay,
-                incrementalIndexingTask.interval,
-                incrementalIndexingTask.timeUnit);
+    public List<ScheduledTask> getScheduledTasks(MessageConnection messageConnection) {
+        return Arrays.asList(
+                getBackupQueueTask(messageConnection),
+                getIncrementalIndexingTask()
+        );
     }
 
     private ScheduledTask getIncrementalIndexingTask() {
@@ -137,9 +133,8 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
         };
         ScheduledTask scheduledTask = new ScheduledTask();
         scheduledTask.command = command;
-        scheduledTask.initialDelay = INITIAL_DELAY_IN_SECONDS;
-        scheduledTask.interval = INDEXING_INTERVAL_IN_SECONDS;
-        scheduledTask.timeUnit = TimeUnit.SECONDS;
+        scheduledTask.initialDelayInMillis = INITIAL_DELAY_IN_MILLIS;
+        scheduledTask.intervalInMillis = INDEXING_INTERVAL_IN_MILLIS;
         return scheduledTask;
     }
 

@@ -1,50 +1,66 @@
 package org.janelia.messaging.broker;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
+import org.janelia.messaging.config.ApplicationConfig;
+import org.janelia.messaging.config.ApplicationConfigProvider;
+import org.janelia.messaging.core.ConnectionManager;
+import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
-import org.janelia.messaging.core.impl.MessageConnectionImpl;
 import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by schauderd on 11/2/17.
  */
-@CommandLine.Command
 public class MessageBroker {
     private static final Logger LOG = LoggerFactory.getLogger(MessageBroker.class);
     private static final int CONSUMERS_THREADPOOL_SIZE = 0;
 
-    @CommandLine.Option(names = {"-ms"}, description = "Messaging server", required = true)
+    @Parameter(names = {"-ms"}, description = "Messaging server", required = true)
     String messagingServer;
-    @CommandLine.Option(names = {"-u"}, description = "Messaging user")
+    @Parameter(names = {"-u"}, description = "Messaging user")
     String messagingUser;
-    @CommandLine.Option(names = {"-p"}, description = "Messaging password")
+    @Parameter(names = {"-p"}, description = "Messaging password")
     String messagingPassword;
-    @CommandLine.Option(names = {"-consumerThreads"}, description = "Consumers thread pool size")
+    @Parameter(names = {"-consumerThreads"}, description = "Consumers thread pool size")
     Integer consumerThreads = CONSUMERS_THREADPOOL_SIZE;
+    @Parameter(names = {"-config"}, description = "Config file")
+    String configFile;
+    @Parameter(names = {"-h"}, description = "Display usage message")
+    boolean usageRequested = false;
 
-    private void startBroker(BrokerAdapter brokerAdapter) {
-        MessageConnectionImpl messageConnection = new MessageConnectionImpl();
-        messageConnection.openConnection(messagingServer, messagingUser, messagingPassword, consumerThreads);
-
-        schedulePeriodicTasks(messageConnection, brokerAdapter, 5);
+    private void startBroker(MessageConnection messageConnection, BrokerAdapter brokerAdapter, int scheduledTasksPoolSize) {
+        ScheduledExecutorService scheduledAdapterTaskExecutorService = Executors.newScheduledThreadPool(scheduledTasksPoolSize);
+        brokerAdapter.getScheduledTasks(messageConnection).stream()
+                .filter(st -> st.command != null)
+                .forEach(st -> scheduledAdapterTaskExecutorService.scheduleAtFixedRate(
+                        st.command,
+                        st.initialDelayInMillis,
+                        st.intervalInMillis,
+                        TimeUnit.MILLISECONDS
+                ));
 
         MessageSenderImpl replySuccessSender = new MessageSenderImpl(messageConnection);
-        replySuccessSender.connectTo(brokerAdapter.adapterArgs.replySuccessExchange, "");
+        replySuccessSender.connectTo(
+                brokerAdapter.adapterArgs.getSuccessResponseExchange(),
+                brokerAdapter.adapterArgs.getSuccessResponseRouting());
 
         MessageSenderImpl replyErrorSender = new MessageSenderImpl(messageConnection);
-        replyErrorSender.connectTo(brokerAdapter.adapterArgs.replyErrorExchange, "");
+        replyErrorSender.connectTo(
+                brokerAdapter.adapterArgs.getErrorResponseExchange(),
+                brokerAdapter.adapterArgs.getErrorResponseRouting());
 
         AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(messageConnection);
         messageConsumer.setAutoAck(brokerAdapter.useAutoAck());
-        messageConsumer.connectTo(brokerAdapter.adapterArgs.receiveQueue);
+        messageConsumer.connectTo(brokerAdapter.adapterArgs.getReceiveQueue());
         messageConsumer.subscribe(brokerAdapter.getMessageHandler(
                 (messageHeaders, messageBody) -> {
                     replySuccessSender.sendMessage(messageHeaders, messageBody);
@@ -57,40 +73,42 @@ public class MessageBroker {
         ));
     }
 
-    /**
-     * this takes the backupQueue as a parameter and offloads the messages to a disk location once a week
-     *
-     * @param connManager
-     * @param threadPoolSize
-     */
-    private void schedulePeriodicTasks(MessageConnectionImpl connManager,
-                                       BrokerAdapter brokerAdapter,
-                                       int threadPoolSize) {
-        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(threadPoolSize);
-        brokerAdapter.schedulePeriodicTasks(connManager, scheduledExecutorService);
-    }
-
-    private BrokerAdapterFactory<?> parseArgs(String[] args) {
-        CommandLine commandLine = new CommandLine(this)
-                .addSubcommand("neuronBroker", new NeuronBrokerAdapterFactory())
-                .addSubcommand("indexingBroker", new IndexingBrokerAdapterFactory())
-                ;
-        List<CommandLine> commandLines = commandLine.parse(args);
-        if (commandLine.isUsageHelpRequested() || commandLines.size() < 2) {
-            commandLine.usage(System.out);
-            return null;
+    private boolean parseArgs(String[] args) {
+        JCommander cmdlineParser = new JCommander(this);
+        cmdlineParser.parse(args);
+        if (this.usageRequested) {
+            cmdlineParser.usage();
+            return false;
         } else {
-            LOG.info("Start {}", commandLines.get(1).getCommandName());
-            return commandLines.get(1).getCommand();
+            return true;
         }
     }
 
     public static void main(String[] args) {
         MessageBroker mb = new MessageBroker();
+        if (!mb.parseArgs(args)) {
+            return;
+        }
+        MessageConnection messageConnection = ConnectionManager.getInstance()
+                .getConnection(mb.messagingServer, mb.messagingUser, mb.messagingPassword, mb.consumerThreads);
+        ApplicationConfig config = new ApplicationConfigProvider()
+                .fromDefaultResources()
+                .fromEnvVar("JACSBROKER_CONFIG")
+                .fromFile(mb.configFile)
+                .fromMap(ApplicationConfigProvider.getAppDynamicArgs())
+                .build();
 
-        BrokerAdapterFactory<?> ba = mb.parseArgs(args);
-        if (ba != null) {
-            mb.startBroker(ba.createBrokerAdapter());
+        BrokerAdapterFactory<?>[] brokerAdapterFactories = new BrokerAdapterFactory<?>[] {
+                new NeuronBrokerAdapterFactory(),
+                new IndexingBrokerAdapterFactory()
+        };
+
+        for (BrokerAdapterFactory<?> brokerAdapterFactory : brokerAdapterFactories) {
+            BrokerAdapter ba = brokerAdapterFactory.createBrokerAdapter(brokerAdapterFactory.getBrokerAdapterArgs(config));
+            if (ba.isEnabled()) {
+                LOG.info("Start broker {}", brokerAdapterFactory.getName());
+                mb.startBroker(messageConnection, ba, 5);
+            }
         }
     }
 

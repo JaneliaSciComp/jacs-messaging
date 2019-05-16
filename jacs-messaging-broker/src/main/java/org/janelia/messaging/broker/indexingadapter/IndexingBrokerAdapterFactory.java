@@ -1,14 +1,22 @@
 package org.janelia.messaging.broker.indexingadapter;
 
+import org.janelia.messaging.broker.BrokerAdapterArgs;
 import org.janelia.messaging.broker.BrokerAdapterFactory;
-import picocli.CommandLine;
+
+import javax.annotation.Nonnull;
 
 public class IndexingBrokerAdapterFactory extends BrokerAdapterFactory<IndexingBrokerAdapter> {
-    @CommandLine.Option(names = {"-indexingServer"}, description = "indexing server URL")
-    String indexingServer;
+
+    @Nonnull
+    @Override
+    public String getName() {
+        return "indexingBroker";
+    }
 
     @Override
-    public IndexingBrokerAdapter createBrokerAdapter() {
-        return new IndexingBrokerAdapter(adapterArgs, indexingServer);
+    public IndexingBrokerAdapter createBrokerAdapter(BrokerAdapterArgs brokerAdapterArgs) {
+        return new IndexingBrokerAdapter(
+                brokerAdapterArgs,
+                brokerAdapterArgs.getAdapterConfig("indexingServer"));
     }
 }

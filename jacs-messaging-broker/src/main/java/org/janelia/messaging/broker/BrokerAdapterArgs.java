@@ -1,22 +1,61 @@
 package org.janelia.messaging.broker;
 
-import picocli.CommandLine;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
 
 public class BrokerAdapterArgs {
     private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
 
-    @CommandLine.Option(names = {"-rec"}, description = "Receiving queue", required = true)
-    String receiveQueue;
-    @CommandLine.Option(names = {"-send"}, description = "Response queue to reply success")
-    String replySuccessExchange;
-    @CommandLine.Option(names = {"-error"}, description = "Response queue to reply error")
-    String replyErrorExchange;
-    @CommandLine.Option(names = {"-backupQueue"}, description = "Backup queue")
-    String backupQueue;
-    @CommandLine.Option(names = {"-backupInterval"}, description = "Interval between two consecutive backups in milliseconds")
-    Long backupIntervalInMillis = DEFAULT_BACKUP_INTERVAL_IN_MILLIS;
-    @CommandLine.Option(names = {"-backupLocation"}, description = "Backup location")
-    String backupLocation;
-    @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
-    boolean displayUsage = false;
+    private final Map<String, String> brokerAdapterConfig;
+
+    BrokerAdapterArgs(Map<String, String> brokerAdapterConfig) {
+        this.brokerAdapterConfig = brokerAdapterConfig;
+    }
+
+    String getReceiveQueue() {
+        return getAdapterConfig("receiveQueue");
+    }
+
+    String getSuccessResponseExchange() {
+        return getAdapterConfig("successResponseQueue");
+    }
+
+    String getSuccessResponseRouting() {
+        return getAdapterConfigOrDefault("successResponseRouting", "");
+    }
+
+    String getErrorResponseExchange() {
+        return getAdapterConfig("errorResponseQueue");
+    }
+
+    String getErrorResponseRouting() {
+        return getAdapterConfigOrDefault("errorResponseRouting", "");
+    }
+
+    String getBackupQueue() {
+        return getAdapterConfig("backupQueue");
+    }
+
+    Long getBackupIntervalInMillis() {
+        String backupInterval = getAdapterConfig("backupIntervalInMillis");
+        if (StringUtils.isNotBlank(backupInterval)) {
+            return Long.valueOf(backupInterval.trim());
+        } else {
+            return DEFAULT_BACKUP_INTERVAL_IN_MILLIS;
+        }
+    }
+
+    String getBackupLocation() {
+        return getAdapterConfig("backupLocation");
+    }
+
+    public String getAdapterConfig(String configProperty) {
+        return brokerAdapterConfig.get(configProperty);
+    }
+
+    public String getAdapterConfigOrDefault(String configProperty, String defaultValue) {
+        return StringUtils.defaultIfBlank(brokerAdapterConfig.get(configProperty), defaultValue);
+    }
+
 }

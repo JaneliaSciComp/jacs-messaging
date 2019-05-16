@@ -1,5 +1,7 @@
 package org.janelia.messaging.tools;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.GenericMessage;
@@ -7,7 +9,6 @@ import org.janelia.messaging.core.impl.BulkMessageConsumerImpl;
 import org.janelia.messaging.core.impl.MessageConnectionImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -21,27 +22,27 @@ public class QueueBackupTool {
     private static final Logger LOG = LoggerFactory.getLogger(QueueBackupTool.class);
     private static final int DEFAULT_CONNECT_RETRIES = 1;
 
-    @CommandLine.Option(names = {"-ms"}, description = "Messaging server", required = true)
+    @Parameter(names = {"-ms"}, description = "Messaging server", required = true)
     String messagingServer;
-    @CommandLine.Option(names = {"-u"}, description = "Messaging user")
+    @Parameter(names = {"-u"}, description = "Messaging user")
     String messagingUser;
-    @CommandLine.Option(names = {"-p"}, description = "Messaging password")
+    @Parameter(names = {"-p"}, description = "Messaging password")
     String messagingPassword;
-    @CommandLine.Option(names = {"-queueName"}, description = "Name of the queue to download")
+    @Parameter(names = {"-queueName"}, description = "Name of the queue to download")
     String queueName;
-    @CommandLine.Option(names = {"-backupLocation"}, description = "Backup location")
+    @Parameter(names = {"-backupLocation"}, description = "Backup location")
     String backupLocation;
-    @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
-    boolean displayUsage = false;
+    @Parameter(names = "-h", description = "Display help")
+    boolean usageRequested = false;
 
     private QueueBackupTool() {
     }
 
     private boolean parseArgs(String[] args) {
-        CommandLine cmdlineParser = new CommandLine(this);
+        JCommander cmdlineParser = new JCommander(this);
         cmdlineParser.parse(args);
-        if (cmdlineParser.isUsageHelpRequested()) {
-            cmdlineParser.usage(System.out);
+        if (usageRequested) {
+            cmdlineParser.usage();
             return false;
         } else {
             return true;

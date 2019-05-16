@@ -1,5 +1,7 @@
 package org.janelia.messaging.tools;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -12,7 +14,6 @@ import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import picocli.CommandLine;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -28,29 +29,29 @@ public class NeuronRecoveryTool {
         LIST, LATEST, TIMESTAMP
     }
 
-    @CommandLine.Option(names = {"-backupFile"}, description = "Backup file", required = true)
+    @Parameter(names = {"-backupFile"}, description = "Backup file", required = true)
     String backupFile;
-    @CommandLine.Option(names = {"-swcLocation"}, description = "SWC file location")
+    @Parameter(names = {"-swcLocation"}, description = "SWC file location")
     String swcLocation;
-    @CommandLine.Option(names = {"-ps", "-persistenceServer"}, description = "Persistence server")
+    @Parameter(names = {"-ps", "-persistenceServer"}, description = "Persistence server")
     String persistenceServer;
-    @CommandLine.Option(names = {"-workspace"}, description = "Workspace ID", required = true)
+    @Parameter(names = {"-workspace"}, description = "Workspace ID", required = true)
     Long workspaceId;
-    @CommandLine.Option(names = {"-neuron"}, description = "Neuron name", required = true)
+    @Parameter(names = {"-neuron"}, description = "Neuron name", required = true)
     String neuronName;
-    @CommandLine.Option(names = {"-action"}, description = "Action", required = true)
+    @Parameter(names = {"-action"}, description = "Action", required = true)
     Action action;
-    @CommandLine.Option(names = "-h", description = "Display help", usageHelp = true)
-    boolean displayUsage = false;
+    @Parameter(names = "-h", description = "Display help")
+    boolean usageRequested = false;
 
     private NeuronRecoveryTool() {
     }
 
     private boolean parseArgs(String[] args) {
-        CommandLine cmdlineParser = new CommandLine(this);
+        JCommander cmdlineParser = new JCommander(this);
         cmdlineParser.parse(args);
-        if (cmdlineParser.isUsageHelpRequested()) {
-            cmdlineParser.usage(System.out);
+        if (usageRequested) {
+            cmdlineParser.usage();
             return false;
         } else {
             return true;
