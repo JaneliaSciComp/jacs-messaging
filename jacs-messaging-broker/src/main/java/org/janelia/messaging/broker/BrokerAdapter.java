@@ -26,7 +26,7 @@ public abstract class BrokerAdapter {
         public long intervalInMillis;
     }
 
-    final BrokerAdapterArgs adapterArgs;
+    final protected BrokerAdapterArgs adapterArgs;
 
     protected BrokerAdapter(BrokerAdapterArgs adapterArgs) {
         this.adapterArgs = adapterArgs;
@@ -58,27 +58,28 @@ public abstract class BrokerAdapter {
         long endMillis = c.getTimeInMillis();
         long initDelayInMillis = endMillis - startMillis;
 
-        LOG.info("Configured scheduled backups to run with initial delay {} and every day at midnight", initDelayInMillis);
+        LOG.info("{} - configured scheduled backups to run with initial delay {} and every day at midnight",
+                adapterArgs.getAdapterName(), initDelayInMillis);
 
         Runnable command;
         if (StringUtils.isNotBlank(adapterArgs.getBackupLocation())) {
             command = () -> {
                 String currentBackupLocation = adapterArgs.getBackupLocation() + c.get(Calendar.DAY_OF_WEEK);
                 try {
-                    LOG.info ("starting scheduled backup to {}", currentBackupLocation);
+                    LOG.info ("{} - starting scheduled backup to {}", adapterArgs.getAdapterName(), currentBackupLocation);
                     ObjectMapper mapper = new ObjectMapper();
                     BulkMessageConsumerImpl consumer = new BulkMessageConsumerImpl(messageConnection);
                     consumer.connectTo(adapterArgs.getBackupQueue());
                     consumer.setAutoAck(true);
                     List<GenericMessage> messageList = consumer.retrieveMessages().collect(Collectors.toList());
-                    LOG.info("Retrieved {} messages to backup at {}", messageList.size(), currentBackupLocation);
+                    LOG.info("{} - retrieved messages to backup {} at {}", adapterArgs.getAdapterName(), messageList.size(), currentBackupLocation);
                     try (OutputStream backupStream = new FileOutputStream(currentBackupLocation)) {
                         mapper.writeValue(backupStream, messageList);
-                        LOG.info("Finished scheduled backup at {} after backing up {} messages", new Date(), messageList.size());
+                        LOG.info("{} - finished scheduled backup at {} after backing up {} messages",
+                                adapterArgs.getAdapterName(), new Date(), messageList.size());
                     }
                 } catch (Exception e) {
-                    LOG.error("Error writing to {}", currentBackupLocation, e);
-                    LOG.error("Problem with backup, {}", e);
+                    LOG.error("{} - error writing backup to {}", adapterArgs.getAdapterName(), currentBackupLocation, e);
                 }
             };
         } else {

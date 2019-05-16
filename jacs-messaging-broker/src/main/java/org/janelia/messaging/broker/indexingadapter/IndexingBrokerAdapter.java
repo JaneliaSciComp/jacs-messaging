@@ -118,7 +118,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     }
 
     private ScheduledTask getIncrementalIndexingTask() {
-        LOG.info("Configure incremental indexing task");
+        LOG.info("{} - configure incremental indexing task", adapterArgs.getAdapterName());
 
         Runnable command = () -> {
             docsToIndex.process(MAX_BATCH_SIZE);

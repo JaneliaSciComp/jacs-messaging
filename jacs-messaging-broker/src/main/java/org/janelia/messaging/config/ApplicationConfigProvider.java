@@ -19,7 +19,7 @@ public class ApplicationConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationConfigProvider.class);
 
-    private static final String DEFAULT_APPLICATION_CONFIG_RESOURCES = "/jacs-messaging.properties";
+    private static final String DEFAULT_APPLICATION_CONFIG_RESOURCES = "/jacsbroker.properties";
 
     private static final Map<String, String> APP_DYNAMIC_ARGS = new HashMap<>();
 

@@ -9,6 +9,7 @@ public abstract class BrokerAdapterFactory<T extends BrokerAdapter> {
 
     public BrokerAdapterArgs getBrokerAdapterArgs(ApplicationConfig config) {
         return new BrokerAdapterArgs(
+                getName(),
                 config.asMap().entrySet().stream()
                 .filter(ce -> ce.getKey().startsWith(getName() + "."))
                 .collect(Collectors.toMap(ce -> ce.getKey().substring(getName().length() + 1), ce -> ce.getValue()))

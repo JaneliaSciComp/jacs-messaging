@@ -7,10 +7,24 @@ import java.util.Map;
 public class BrokerAdapterArgs {
     private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
 
+    private final String adapterName;
     private final Map<String, String> brokerAdapterConfig;
 
-    BrokerAdapterArgs(Map<String, String> brokerAdapterConfig) {
+    BrokerAdapterArgs(String adapterName, Map<String, String> brokerAdapterConfig) {
+        this.adapterName = adapterName;
         this.brokerAdapterConfig = brokerAdapterConfig;
+    }
+
+    public String getAdapterName() {
+        return adapterName;
+    }
+
+    public String getAdapterConfig(String configProperty) {
+        return brokerAdapterConfig.get(configProperty);
+    }
+
+    public String getAdapterConfigOrDefault(String configProperty, String defaultValue) {
+        return StringUtils.defaultIfBlank(brokerAdapterConfig.get(configProperty), defaultValue);
     }
 
     String getReceiveQueue() {
@@ -48,14 +62,6 @@ public class BrokerAdapterArgs {
 
     String getBackupLocation() {
         return getAdapterConfig("backupLocation");
-    }
-
-    public String getAdapterConfig(String configProperty) {
-        return brokerAdapterConfig.get(configProperty);
-    }
-
-    public String getAdapterConfigOrDefault(String configProperty, String defaultValue) {
-        return StringUtils.defaultIfBlank(brokerAdapterConfig.get(configProperty), defaultValue);
     }
 
 }
