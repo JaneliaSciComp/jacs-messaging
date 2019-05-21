@@ -27,7 +27,7 @@ dependencies {
         JACKSON_JAXRS_JSON_PROVIDER = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${JACKSON_VERSION}"
 
         // Janelia libraries
-        JACS_MODEL_VERSION = "2.1.0"
+        JACS_MODEL_VERSION = "2.2.0"
         JACS_MODEL_CORE_LIB = "org.janelia.jacs-model:jacs-model-core:${JACS_MODEL_VERSION}"
 
         // JAX-RS API
