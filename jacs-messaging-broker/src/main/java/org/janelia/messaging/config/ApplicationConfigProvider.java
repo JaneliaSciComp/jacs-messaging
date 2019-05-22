@@ -1,35 +1,24 @@
 package org.janelia.messaging.config;
 
-import org.apache.commons.lang3.StringUtils;
-import org.janelia.messaging.config.impl.ApplicationConfigImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
+import org.janelia.messaging.config.impl.ApplicationConfigImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ApplicationConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationConfigProvider.class);
 
     private static final String DEFAULT_APPLICATION_CONFIG_RESOURCES = "/jacsbroker.properties";
-
-    private static final Map<String, String> APP_DYNAMIC_ARGS = new HashMap<>();
-
-    public static Map<String, String> getAppDynamicArgs() {
-        return APP_DYNAMIC_ARGS;
-    }
-
-    public static void setAppDynamicArgs(Map<String, String> appDynamicArgs) {
-        if (appDynamicArgs != null) APP_DYNAMIC_ARGS.putAll(appDynamicArgs);
-    }
 
     private ApplicationConfig applicationConfig = new ApplicationConfigImpl();
 

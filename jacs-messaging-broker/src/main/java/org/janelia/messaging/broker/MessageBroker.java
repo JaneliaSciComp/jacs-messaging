@@ -1,7 +1,15 @@
 package org.janelia.messaging.broker;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.config.ApplicationConfig;
@@ -12,10 +20,6 @@ import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
 import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by schauderd on 11/2/17.
@@ -36,6 +40,8 @@ public class MessageBroker {
     String configFile;
     @Parameter(names = {"-h"}, description = "Display usage message")
     boolean usageRequested = false;
+    @DynamicParameter(names = "-D", description = "Dynamic application parameters that could override application properties")
+    Map<String, String> appDynamicConfig = new HashMap<>();
 
     private void startBroker(MessageConnection messageConnection, BrokerAdapter brokerAdapter, int scheduledTasksPoolSize) {
         ScheduledExecutorService scheduledAdapterTaskExecutorService = Executors.newScheduledThreadPool(scheduledTasksPoolSize);
@@ -95,7 +101,7 @@ public class MessageBroker {
                 .fromDefaultResources()
                 .fromEnvVar("JACSBROKER_CONFIG")
                 .fromFile(mb.configFile)
-                .fromMap(ApplicationConfigProvider.getAppDynamicArgs())
+                .fromMap(mb.appDynamicConfig)
                 .build();
 
         BrokerAdapterFactory<?>[] brokerAdapterFactories = new BrokerAdapterFactory<?>[] {
