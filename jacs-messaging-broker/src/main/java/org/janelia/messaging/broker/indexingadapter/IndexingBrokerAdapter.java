@@ -22,14 +22,14 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     private static final long INITIAL_DELAY_IN_MILLIS = 15000L;
     private static final long INDEXING_INTERVAL_IN_MILLIS = 15000L;
 
-    private final IndexingRestClient indexingRestClient;
+    private final IndexingService indexingService;
     private final DedupedDelayWithCallbackQueue<Reference> docsToIndex;
     private final DedupedDelayWithCallbackQueue<Long> docIdsToRemove;
     private final NavigableMap<Long, DedupedDelayQueue<Long>> docDescendantsToAdd;
 
-    IndexingBrokerAdapter(BrokerAdapterArgs adapterArgs, String indexingServerURL) {
+    IndexingBrokerAdapter(BrokerAdapterArgs adapterArgs) {
         super(adapterArgs);
-        this.indexingRestClient = new IndexingRestClient(indexingServerURL);
+        this.indexingService = createIndexingService(adapterArgs);
 
         docsToIndex = new DedupedDelayWithCallbackQueue<Reference>() {
             {
@@ -39,7 +39,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
             @Override
             void processList(List<Reference> workItems) {
                 LOG.info("Index items {}", workItems);
-                indexingRestClient.indexDocReferences(workItems);
+                indexingService.indexDocReferences(workItems);
             }
         };
 
@@ -51,11 +51,15 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
             @Override
             void processList(List<Long> workItems) {
                 LOG.info("Remove items {}", workItems);
-                indexingRestClient.remmoveDocIds(workItems);
+                indexingService.remmoveDocIds(workItems);
             }
         };
 
         docDescendantsToAdd = new ConcurrentSkipListMap<>();
+    }
+
+    private IndexingService createIndexingService(BrokerAdapterArgs adapterArgs) {
+        return null; // FIXME
     }
 
     @Override
@@ -97,7 +101,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                     @Override
                     void processList(List<Long> workItems) {
                         LOG.info("Add ancestor {} to {}", ancestorId, workItems);
-                        indexingRestClient.addAncestorToDocs(ancestorId, workItems);
+                        indexingService.addAncestorToDocs(ancestorId, workItems);
                         Map<String, Object> messageHeaders = new LinkedHashMap<>();
                         messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
                         messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,

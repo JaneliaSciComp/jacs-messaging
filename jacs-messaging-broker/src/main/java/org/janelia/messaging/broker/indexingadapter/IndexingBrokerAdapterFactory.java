@@ -15,8 +15,6 @@ public class IndexingBrokerAdapterFactory extends BrokerAdapterFactory<IndexingB
 
     @Override
     public IndexingBrokerAdapter createBrokerAdapter(BrokerAdapterArgs brokerAdapterArgs) {
-        return new IndexingBrokerAdapter(
-                brokerAdapterArgs,
-                brokerAdapterArgs.getAdapterConfig("indexingServer"));
+        return new IndexingBrokerAdapter(brokerAdapterArgs);
     }
 }
