@@ -1,5 +1,12 @@
 package org.janelia.messaging.broker.indexingadapter;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+
 import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.broker.BrokerAdapterArgs;
 import org.janelia.messaging.core.MessageConnection;
@@ -7,13 +14,6 @@ import org.janelia.messaging.core.MessageHandler;
 import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 public class IndexingBrokerAdapter extends BrokerAdapter {
     private static final Logger LOG = LoggerFactory.getLogger(IndexingBrokerAdapter.class);
@@ -59,7 +59,7 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     }
 
     private IndexingService createIndexingService(BrokerAdapterArgs adapterArgs) {
-        return null; // FIXME
+        return new RestIndexingService(adapterArgs.getAdapterConfig("indexingServer"));
     }
 
     @Override
