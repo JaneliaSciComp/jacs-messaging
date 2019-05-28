@@ -62,7 +62,8 @@ public abstract class BrokerAdapter {
                 adapterArgs.getAdapterName(), initDelayInMillis);
 
         Runnable command;
-        if (StringUtils.isNotBlank(adapterArgs.getBackupLocation())) {
+        if (StringUtils.isNotBlank(adapterArgs.getBackupQueue()) && StringUtils.isNotBlank(adapterArgs.getBackupLocation())) {
+            LOG.info("Setup backup task for {} to save {} at {}", adapterArgs.getAdapterName(), adapterArgs.getBackupQueue(), adapterArgs.getBackupLocation());
             command = () -> {
                 String currentBackupLocation = adapterArgs.getBackupLocation() + c.get(Calendar.DAY_OF_WEEK);
                 try {
@@ -83,6 +84,8 @@ public abstract class BrokerAdapter {
                 }
             };
         } else {
+            LOG.info("No backup task configured for {} - either backup queue ({}) or backup location ({}) is null",
+                    adapterArgs.getAdapterName(), adapterArgs.getBackupQueue(), adapterArgs.getBackupLocation());
             command = null;
         }
         ScheduledTask scheduledBackupTask = new ScheduledTask();
