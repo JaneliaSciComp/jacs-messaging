@@ -1,8 +1,8 @@
 package org.janelia.messaging.broker;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
 
 public class BrokerAdapterArgs {
     private static final long DEFAULT_BACKUP_INTERVAL_IN_MILLIS = 86400000L;
@@ -27,31 +27,31 @@ public class BrokerAdapterArgs {
         return StringUtils.defaultIfBlank(brokerAdapterConfig.get(configProperty), defaultValue);
     }
 
-    String getReceiveQueue() {
+    public String getReceiveQueue() {
         return getAdapterConfig("receiveQueue");
     }
 
-    String getSuccessResponseExchange() {
+    public String getSuccessResponseExchange() {
         return getAdapterConfig("successResponseQueue");
     }
 
-    String getSuccessResponseRouting() {
+    public String getSuccessResponseRouting() {
         return getAdapterConfigOrDefault("successResponseRouting", "");
     }
 
-    String getErrorResponseExchange() {
+    public String getErrorResponseExchange() {
         return getAdapterConfig("errorResponseQueue");
     }
 
-    String getErrorResponseRouting() {
+    public String getErrorResponseRouting() {
         return getAdapterConfigOrDefault("errorResponseRouting", "");
     }
 
-    String getBackupQueue() {
+    public String getBackupQueue() {
         return getAdapterConfig("backupQueue");
     }
 
-    Long getBackupIntervalInMillis() {
+    public Long getBackupIntervalInMillis() {
         String backupInterval = getAdapterConfig("backupIntervalInMillis");
         if (StringUtils.isNotBlank(backupInterval)) {
             return Long.valueOf(backupInterval.trim());
@@ -60,7 +60,7 @@ public class BrokerAdapterArgs {
         }
     }
 
-    String getBackupLocation() {
+    public String getBackupLocation() {
         return getAdapterConfig("backupLocation");
     }
 

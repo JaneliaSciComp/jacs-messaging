@@ -17,7 +17,6 @@ import org.janelia.messaging.config.ApplicationConfigProvider;
 import org.janelia.messaging.core.ConnectionManager;
 import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
-import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,29 +53,10 @@ public class MessageBroker {
                         TimeUnit.MILLISECONDS
                 ));
 
-        MessageSenderImpl replySuccessSender = new MessageSenderImpl(messageConnection);
-        replySuccessSender.connectTo(
-                brokerAdapter.adapterArgs.getSuccessResponseExchange(),
-                brokerAdapter.adapterArgs.getSuccessResponseRouting());
-
-        MessageSenderImpl replyErrorSender = new MessageSenderImpl(messageConnection);
-        replyErrorSender.connectTo(
-                brokerAdapter.adapterArgs.getErrorResponseExchange(),
-                brokerAdapter.adapterArgs.getErrorResponseRouting());
-
         AsyncMessageConsumerImpl messageConsumer = new AsyncMessageConsumerImpl(messageConnection);
         messageConsumer.setAutoAck(brokerAdapter.useAutoAck());
         messageConsumer.connectTo(brokerAdapter.adapterArgs.getReceiveQueue());
-        messageConsumer.subscribe(brokerAdapter.getMessageHandler(
-                (messageHeaders, messageBody) -> {
-                    replySuccessSender.sendMessage(messageHeaders, messageBody);
-                },
-                (messageHeaders, messageBody) -> {
-                    // the error handler broadcasts it to all "known" senders
-                    replySuccessSender.sendMessage(messageHeaders, messageBody);
-                    replyErrorSender.sendMessage(messageHeaders, messageBody);
-                }
-        ));
+        messageConsumer.subscribe(brokerAdapter.getMessageHandler(messageConnection));
     }
 
     private boolean parseArgs(String[] args) {

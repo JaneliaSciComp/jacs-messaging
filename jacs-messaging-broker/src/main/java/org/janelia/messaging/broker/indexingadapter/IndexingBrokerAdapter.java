@@ -7,10 +7,13 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.broker.BrokerAdapter;
 import org.janelia.messaging.broker.BrokerAdapterArgs;
 import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.MessageHandler;
+import org.janelia.messaging.core.MessageSender;
+import org.janelia.messaging.core.impl.MessageSenderImpl;
 import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,23 +66,37 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     }
 
     @Override
-    public MessageHandler getMessageHandler(MessageHandler.HandlerCallback successCallback, MessageHandler.HandlerCallback errorCallback) {
-        docsToIndex.setProcessingCompleteCallback(workItems -> {
-            Map<String, Object> messageHeaders = new LinkedHashMap<>();
-            messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
-            messageHeaders.put(IndexingMessageHeaders.OBJECT_REFS,
-                    workItems.stream().map(Reference::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
-            );
-            successCallback.callback(messageHeaders, null);
-        });
-        docIdsToRemove.setProcessingCompleteCallback(workItems -> {
-            Map<String, Object> messageHeaders = new LinkedHashMap<>();
-            messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
-            messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
-                    workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
-            );
-            successCallback.callback(messageHeaders, null);
-        });
+    public MessageHandler getMessageHandler(MessageConnection messageConnection) {
+
+        MessageSender replySuccessSender;
+        if (StringUtils.isNotBlank(adapterArgs.getSuccessResponseExchange())) {
+            LOG.info("Forward indexing requests to '{}' using routing key '{}'",
+                    adapterArgs.getSuccessResponseExchange(), adapterArgs.getSuccessResponseRouting());
+            replySuccessSender = new MessageSenderImpl(messageConnection);
+            replySuccessSender.connectTo(
+                    adapterArgs.getSuccessResponseExchange(),
+                    adapterArgs.getSuccessResponseRouting());
+            docsToIndex.setProcessingCompleteCallback(workItems -> {
+                Map<String, Object> messageHeaders = new LinkedHashMap<>();
+                messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
+                messageHeaders.put(IndexingMessageHeaders.OBJECT_REFS,
+                        workItems.stream().map(Reference::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+                );
+                replySuccessSender.sendMessage(messageHeaders, null);
+            });
+            docIdsToRemove.setProcessingCompleteCallback(workItems -> {
+                Map<String, Object> messageHeaders = new LinkedHashMap<>();
+                messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
+                messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
+                        workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+                );
+                replySuccessSender.sendMessage(messageHeaders, null);
+            });
+        } else {
+            LOG.info("Forwarding of the indexing requests has not been configured - success response exchange is empty");
+            replySuccessSender = null;
+        }
+
         return new IndexingHandler(
                 docsToIndex,
                 docIdsToRemove,
@@ -102,13 +119,15 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                     void processList(List<Long> workItems) {
                         LOG.info("Add ancestor {} to {}", ancestorId, workItems);
                         indexingService.addAncestorToDocs(ancestorId, workItems);
-                        Map<String, Object> messageHeaders = new LinkedHashMap<>();
-                        messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
-                        messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
-                                workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
-                        );
-                        messageHeaders.put(IndexingMessageHeaders.ANCESTOR_ID, ancestorId);
-                        successCallback.callback(messageHeaders, null);
+                        if (replySuccessSender != null) {
+                            Map<String, Object> messageHeaders = new LinkedHashMap<>();
+                            messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
+                            messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
+                                    workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+                            );
+                            messageHeaders.put(IndexingMessageHeaders.ANCESTOR_ID, ancestorId);
+                            replySuccessSender.sendMessage(messageHeaders, null);
+                        }
                     }
                 });
     }

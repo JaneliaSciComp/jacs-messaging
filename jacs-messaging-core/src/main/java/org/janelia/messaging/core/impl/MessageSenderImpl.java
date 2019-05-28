@@ -1,12 +1,14 @@
 package org.janelia.messaging.core.impl;
 
+import java.util.Map;
+
+import com.google.common.base.Preconditions;
+
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.MessageSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Created by schauderd on 11/2/17.
@@ -25,11 +27,11 @@ public class MessageSenderImpl implements MessageSender {
 
     @Override
     public void connectTo(String exchange, String routingKey) {
-        if (messageConnection.isOpen() && StringUtils.isNotBlank(exchange)) {
-            LOG.info("Connect to {} with key {}", exchange, routingKey);
-            this.exchange = exchange;
-            this.routingKey = routingKey;
-        }
+        LOG.info("Setup sender's exchange '{}' with key '{}'", exchange, routingKey);
+        Preconditions.checkArgument(StringUtils.isNotBlank(exchange),
+                "The exchange to connect cannot be null or blank");
+        this.exchange = exchange;
+        this.routingKey = routingKey;
     }
 
     @Override
@@ -40,13 +42,13 @@ public class MessageSenderImpl implements MessageSender {
 
     @Override
     public void sendMessage(Map<String, Object> messageHeaders, byte[] messageBody) {
-        if (StringUtils.isNotBlank(exchange)) {
-            try {
-                LOG.info("Send message {} to {} with routingKey {}", messageHeaders, exchange, routingKey);
-                messageConnection.publish(exchange, routingKey, messageHeaders, messageBody);
-            } catch (Exception e) {
-                LOG.error("Error publishing message {} to the exchange {} with routingKey {}", messageHeaders, exchange, routingKey);
-            }
+        Preconditions.checkArgument(messageConnection.isOpen(),
+                "The connection must be open before trying to send a message");
+        try {
+            LOG.info("Send message {} to {} with routingKey {}", messageHeaders, exchange, routingKey);
+            messageConnection.publish(exchange, routingKey, messageHeaders, messageBody);
+        } catch (Exception e) {
+            LOG.error("Error publishing message {} to the exchange {} with routingKey {}", messageHeaders, exchange, routingKey);
         }
     }
 
