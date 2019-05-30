@@ -9,6 +9,10 @@ import java.util.stream.Stream;
 public interface MessageConnection {
     boolean isOpen();
 
+    default boolean isNotOpen() {
+        return !isOpen();
+    }
+
     void openConnection(String host, String username, String password, int threadPoolSize);
 
     void closeConnection();

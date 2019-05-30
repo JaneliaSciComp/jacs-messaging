@@ -15,6 +15,7 @@ import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.config.ApplicationConfig;
 import org.janelia.messaging.config.ApplicationConfigProvider;
 import org.janelia.messaging.core.ConnectionManager;
+import org.janelia.messaging.core.ConnectionParameters;
 import org.janelia.messaging.core.MessageConnection;
 import org.janelia.messaging.core.impl.AsyncMessageConsumerImpl;
 import org.slf4j.Logger;
@@ -75,14 +76,22 @@ public class MessageBroker {
         if (!mb.parseArgs(args)) {
             return;
         }
-        MessageConnection messageConnection = ConnectionManager.getInstance()
-                .getConnection(mb.messagingServer, mb.messagingUser, mb.messagingPassword, mb.consumerThreads);
         ApplicationConfig config = new ApplicationConfigProvider()
                 .fromDefaultResources()
                 .fromEnvVar("JACSBROKER_CONFIG")
                 .fromFile(mb.configFile)
                 .fromMap(mb.appDynamicConfig)
                 .build();
+        MessageConnection messageConnection = ConnectionManager.getInstance()
+                .getConnection(new ConnectionParameters()
+                        .setHost(mb.messagingServer)
+                        .setUser(mb.messagingUser)
+                        .setPassword(mb.messagingPassword)
+                        .setMaxRetries(config.getIntegerPropertyValue("connection.maxRetries", 1))
+                        .setPauseBetweenRetriesInMillis(config.getLongPropertyValue("connection.pauseBetweenRetriesInMillis", 100L))
+                        .setConsumerThreads(mb.consumerThreads)
+                )
+                ;
 
         BrokerAdapterFactory<?>[] brokerAdapterFactories = new BrokerAdapterFactory<?>[] {
                 new NeuronBrokerAdapterFactory(),

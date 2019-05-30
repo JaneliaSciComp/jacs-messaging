@@ -1,16 +1,17 @@
 package org.janelia.messaging.config.impl;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
-import org.apache.commons.lang3.StringUtils;
-import org.janelia.configutils.ConfigValueResolver;
-import org.janelia.messaging.config.ApplicationConfig;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+
+import org.apache.commons.lang3.StringUtils;
+import org.janelia.configutils.ConfigValueResolver;
+import org.janelia.messaging.config.ApplicationConfig;
 
 public class ApplicationConfigImpl implements ApplicationConfig {
     private final Map<String, String> configProperties = new HashMap<>();
@@ -45,6 +46,18 @@ public class ApplicationConfigImpl implements ApplicationConfig {
     public Integer getIntegerPropertyValue(String name, Integer defaultValue) {
         String stringValue = getStringPropertyValue(name);
         return StringUtils.isBlank(stringValue) ? defaultValue : Integer.valueOf(stringValue);
+    }
+
+    @Override
+    public Long getLongPropertyValue(String name) {
+        String stringValue = getStringPropertyValue(name);
+        return StringUtils.isBlank(stringValue) ? null : Long.valueOf(stringValue);
+    }
+
+    @Override
+    public Long getLongPropertyValue(String name, Long defaultValue) {
+        String stringValue = getStringPropertyValue(name);
+        return StringUtils.isBlank(stringValue) ? defaultValue : Long.valueOf(stringValue);
     }
 
     @Override
