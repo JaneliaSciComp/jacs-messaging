@@ -45,7 +45,6 @@ public class MessageSenderImpl implements MessageSender {
         Preconditions.checkArgument(messageConnection.isOpen(),
                 "The connection must be open before trying to send a message");
         try {
-            LOG.info("Send message {} to {} with routingKey {}", messageHeaders, exchange, routingKey);
             messageConnection.publish(exchange, routingKey, messageHeaders, messageBody);
         } catch (Exception e) {
             LOG.error("Error publishing message {} to the exchange {} with routingKey {}", messageHeaders, exchange, routingKey);
