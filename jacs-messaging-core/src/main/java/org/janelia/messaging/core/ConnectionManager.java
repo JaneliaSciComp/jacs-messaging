@@ -13,6 +13,10 @@ public class ConnectionManager {
     private ConnectionManager() {
     }
 
+    public MessageConnection getConnection() {
+        return new MessageConnectionImpl();
+    }
+
     public MessageConnection getConnection(String host, String user, String password, int threadPoolSize) {
         return getConnection(
                 new ConnectionParameters()
@@ -25,7 +29,7 @@ public class ConnectionManager {
     }
 
     public MessageConnection getConnection(ConnectionParameters connectionParameters) {
-        MessageConnection messageConnection = new RetriedMessageConnectionImpl(new MessageConnectionImpl(),
+        MessageConnection messageConnection = new RetriedMessageConnectionImpl(getConnection(),
                 connectionParameters.maxRetries,
                 connectionParameters.pauseBetweenRetriesInMillis);
         messageConnection.openConnection(
