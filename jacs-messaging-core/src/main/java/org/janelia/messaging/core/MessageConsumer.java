@@ -6,4 +6,5 @@ public interface MessageConsumer {
                           String routingKey,
                           String queueName);
     void disconnect();
+    boolean isConnected();
 }

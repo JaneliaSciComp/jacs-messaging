@@ -41,6 +41,11 @@ public class MessageSenderImpl implements MessageSender {
     }
 
     @Override
+    public boolean isConnected() {
+        return messageConnection.isOpen();
+    }
+
+    @Override
     public void sendMessage(Map<String, Object> messageHeaders, byte[] messageBody) {
         Preconditions.checkArgument(messageConnection.isOpen(),
                 "The connection must be open before trying to send a message");

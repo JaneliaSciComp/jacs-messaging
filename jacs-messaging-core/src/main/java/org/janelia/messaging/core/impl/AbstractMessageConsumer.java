@@ -47,6 +47,11 @@ abstract class AbstractMessageConsumer implements MessageConsumer {
     }
 
     @Override
+    public boolean isConnected() {
+        return messageConnection.isOpen();
+    }
+
+    @Override
     public void bindAndConnectTo(String exchangeName, String routingKey, String queueName) {
         if (messageConnection.isOpen()) {
             this.queue = messageConnection.bindAndConnectTo(exchangeName, routingKey, queueName);
