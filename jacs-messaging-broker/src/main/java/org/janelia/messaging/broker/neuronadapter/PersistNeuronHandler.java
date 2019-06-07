@@ -1,17 +1,5 @@
 package org.janelia.messaging.broker.neuronadapter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang3.StringUtils;
-import org.janelia.messaging.core.MessageHandler;
-import org.janelia.messaging.utils.MessagingUtils;
-import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +7,20 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
+import org.apache.commons.lang3.StringUtils;
+import org.janelia.messaging.core.MessageHandler;
+import org.janelia.messaging.utils.MessagingUtils;
+import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class PersistNeuronHandler implements MessageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(PersistNeuronHandler.class);
@@ -262,9 +264,12 @@ class PersistNeuronHandler implements MessageHandler {
                                 } else if (neuron.getOwnerKey().equals(user)) {
                                     onSuccess.accept(neuron, true); // this neuron is already owned by this user
                                 } else {
+                                    LOG.info("Ownership request cannot be granted to {} because the neuron {} is owned by {} not by the tracers group user - {}",
+                                            user, neuron.getId(), neuron.getOwnerKey(), sharedWorkspaceSystemOwner);
                                     onSuccess.accept(neuron, false); // the broker cannot make a decision
                                 }
                             } else {
+                                LOG.warn("Ownership cannot be changed because the neuron {} does not have the owner set", neuron.getId());
                                 onSuccess.accept(neuron, false); // the broker cannot make a decision
                             }
                         });
