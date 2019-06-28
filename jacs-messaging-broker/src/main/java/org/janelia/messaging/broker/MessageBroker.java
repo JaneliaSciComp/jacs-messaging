@@ -77,7 +77,6 @@ public class MessageBroker {
             return;
         }
         ApplicationConfig config = new ApplicationConfigProvider()
-                .fromDefaultResources()
                 .fromEnvVar("JACSBROKER_CONFIG")
                 .fromFile(mb.configFile)
                 .fromMap(mb.appDynamicConfig)
