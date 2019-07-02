@@ -1,6 +1,8 @@
 package org.janelia.messaging.broker;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -81,24 +83,35 @@ public class MessageBroker {
                 .fromFile(mb.configFile)
                 .fromMap(mb.appDynamicConfig)
                 .build();
-        MessageConnection messageConnection = ConnectionManager.getInstance()
-                .getConnection(new ConnectionParameters()
-                        .setHost(mb.messagingServer)
-                        .setUser(mb.messagingUser)
-                        .setPassword(mb.messagingPassword)
-                        .setMaxRetries(config.getIntegerPropertyValue("connection.maxRetries", 1))
-                        .setPauseBetweenRetriesInMillis(config.getLongPropertyValue("connection.pauseBetweenRetriesInMillis", 100L))
-                        .setConsumerThreads(mb.consumerThreads)
-                )
-                ;
+        String brokerList = config.getStringPropertyValue("brokers", "Neuron,Indexing");
+        List<BrokerAdapterFactory> factories = new ArrayList<>();
+        if (brokerList.trim().length()>0) {
+            String[] brokers = brokerList.split(",");
+            for (int i=0; i<brokers.length; i++) {
+                // need to collate annotations or something for this
+                if (brokers[i].equals("Indexing")) {
+                    factories.add(new IndexingBrokerAdapterFactory());
+                } else if (brokers[i].equals("Neuron")) {
+                    factories.add(new NeuronBrokerAdapterFactory());
+                }
+            }
+        }
 
-        BrokerAdapterFactory<?>[] brokerAdapterFactories = new BrokerAdapterFactory<?>[] {
-                new NeuronBrokerAdapterFactory()
-        };
+        BrokerAdapterFactory<?>[] brokerAdapterFactories = factories.stream().toArray(BrokerAdapterFactory[]::new);
 
         for (BrokerAdapterFactory<?> brokerAdapterFactory : brokerAdapterFactories) {
             BrokerAdapter ba = brokerAdapterFactory.createBrokerAdapter(brokerAdapterFactory.getBrokerAdapterArgs(config));
             if (ba.isEnabled()) {
+                MessageConnection messageConnection = ConnectionManager.getInstance()
+                        .getConnection(new ConnectionParameters()
+                                .setHost(mb.messagingServer)
+                                .setUser(mb.messagingUser)
+                                .setPassword(mb.messagingPassword)
+                                .setMaxRetries(config.getIntegerPropertyValue("connection.maxRetries", 1))
+                                .setPauseBetweenRetriesInMillis(config.getLongPropertyValue("connection.pauseBetweenRetriesInMillis", 100L))
+                                .setConsumerThreads(mb.consumerThreads)
+                        )
+                        ;
                 LOG.info("Start broker {}", brokerAdapterFactory.getName());
                 mb.startBroker(messageConnection, ba, 5);
             }
