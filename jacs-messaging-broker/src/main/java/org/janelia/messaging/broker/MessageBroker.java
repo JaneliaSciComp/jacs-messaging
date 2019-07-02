@@ -93,8 +93,7 @@ public class MessageBroker {
                 ;
 
         BrokerAdapterFactory<?>[] brokerAdapterFactories = new BrokerAdapterFactory<?>[] {
-                new NeuronBrokerAdapterFactory(),
-                new IndexingBrokerAdapterFactory()
+                new NeuronBrokerAdapterFactory()
         };
 
         for (BrokerAdapterFactory<?> brokerAdapterFactory : brokerAdapterFactories) {
