@@ -1,15 +1,15 @@
 package org.janelia.messaging.broker.neuronadapter;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Singleton for managing the Tiled Microscope Domain Model and related data access.
@@ -20,8 +20,8 @@ public class TiledMicroscopeDomainMgr {
     private static final Logger log = LoggerFactory.getLogger(TiledMicroscopeDomainMgr.class);
     private final TiledMicroscopeRestClient client;
 
-    public TiledMicroscopeDomainMgr(String remoteUrl) {
-        client = new TiledMicroscopeRestClient(remoteUrl);
+    public TiledMicroscopeDomainMgr(String remoteUrl, String apiKey) {
+        client = new TiledMicroscopeRestClient(remoteUrl, apiKey);
     }
 
     public TmSample getSampleByWorkspaceId(Long workspaceId, String subjectKey) throws Exception {

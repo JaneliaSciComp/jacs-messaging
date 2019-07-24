@@ -1,5 +1,21 @@
 package org.janelia.messaging.broker.neuronadapter;
 
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.glassfish.jersey.media.multipart.BodyPart;
@@ -13,21 +29,6 @@ import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * A web client providing access to the Tiled Microscope REST Service.
  *
@@ -40,19 +41,19 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     private static final String REMOTE_MOUSELIGHT_DATA_PREFIX = "mouselight/data";
     private static final String REMOTE_DOMAIN_PERMISSIONS_PREFIX = "data/user/permissions";
 
-    TiledMicroscopeRestClient(String remoteApiURL) {
-        super(remoteApiURL);
+    TiledMicroscopeRestClient(String remoteApiURL, String apiKey) {
+        super(remoteApiURL, apiKey);
     }
 
-    WebTarget getMouselightEndpoint(String suffix, String subjectKey) {
+    private WebTarget getMouselightEndpoint(String suffix, String subjectKey) {
         LOG.info("Endpoint target: {}", serverURL + REMOTE_MOUSELIGHT_DATA_PREFIX + suffix);
-        return client.target(serverURL + REMOTE_MOUSELIGHT_DATA_PREFIX + suffix)
+        return serverTarget.path(REMOTE_MOUSELIGHT_DATA_PREFIX + suffix)
                 .queryParam("subjectKey", subjectKey);
     }
 
-    WebTarget getDomainPermissionsEndpoint() {
+    private WebTarget getDomainPermissionsEndpoint() {
         LOG.info("Endpoint target: {}", serverURL + REMOTE_DOMAIN_PERMISSIONS_PREFIX);
-        return client.target(serverURL + REMOTE_DOMAIN_PERMISSIONS_PREFIX);
+        return serverTarget.path(REMOTE_DOMAIN_PERMISSIONS_PREFIX);
     }
 
     List<TmNeuronMetadata> getNeuronMetadata(List<String> neuronIds, String subjectKey) {
@@ -127,7 +128,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
-    TmNeuronMetadata updateMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
+    TmNeuronMetadata updateMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) {
         return update(neuronMetadata, null, subjectKey);
     }
 
@@ -141,12 +142,12 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     List<TmNeuronMetadata> updateMetadata(List<TmNeuronMetadata> neuronList, String subjectKey) {
         List<Pair<TmNeuronMetadata, InputStream>> pairs = new ArrayList<>();
         for (TmNeuronMetadata tmNeuronMetadata : neuronList) {
-            pairs.add(Pair.of(tmNeuronMetadata, (InputStream) null));
+            pairs.add(Pair.of(tmNeuronMetadata, null));
         }
         return update(pairs, subjectKey);
     }
 
-    List<TmNeuronMetadata> update(Collection<Pair<TmNeuronMetadata, InputStream>> neuronPairs, String subjectKey) {
+    private List<TmNeuronMetadata> update(Collection<Pair<TmNeuronMetadata, InputStream>> neuronPairs, String subjectKey) {
         if (neuronPairs.isEmpty()) return Collections.emptyList();
         MultiPart multiPartEntity = new MultiPart();
         for (Pair<TmNeuronMetadata, InputStream> neuronPair : neuronPairs) {
@@ -158,7 +159,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
             }
         }
 
-        String logStr = null;
+        String logStr;
         if (neuronPairs.size() == 1) {
             TmNeuronMetadata neuron = neuronPairs.iterator().next().getLeft();
             logStr = neuron == null ? "null neuron" : neuron.toString();
@@ -175,9 +176,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
             throw new WebApplicationException(response);
         }
 
-        List<TmNeuronMetadata> list = response.readEntity(new GenericType<List<TmNeuronMetadata>>() {
-        });
-        return list;
+        return response.readEntity(new GenericType<List<TmNeuronMetadata>>() {});
     }
 
     void remove(TmNeuronMetadata neuronMetadata, String subjectKey) {

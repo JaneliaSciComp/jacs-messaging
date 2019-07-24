@@ -1,16 +1,18 @@
 package org.janelia.messaging.tools.swc;
 
-import Jama.Matrix;
+import java.io.File;
+
+import javax.media.jai.RenderedImageAdapter;
+
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.SeekableStream;
+
+import Jama.Matrix;
 import org.janelia.messaging.broker.neuronadapter.TiledMicroscopeDomainMgr;
 import org.janelia.messaging.tools.geom.BoundingBox3d;
 import org.janelia.messaging.tools.geom.Vec3;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
-
-import javax.media.jai.RenderedImageAdapter;
-import java.io.File;
 
 /**
  * Uses matrices (based on JAMA package), to convert between internal and
@@ -19,12 +21,14 @@ import java.io.File;
  * @author fosterl
  */
 public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
-    public static final int EXPECTED_ARRAY_SIZE = 3;
+    private static final int EXPECTED_ARRAY_SIZE = 3;
+
+    static BoundingBox3d boundingBox;
+
     private Matrix micronToVoxMatrix;
     private Matrix voxToMicronMatrix;
     private Long workspaceId;
-    static BoundingBox3d boundingBox;
-    double[] scale;
+    private double[] scale;
 
     public MatrixDrivenSWCExchanger(Long workspaceId) {
         this.workspaceId = workspaceId;
@@ -59,7 +63,7 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
 
     public void init(String persistenceServer, String user) throws Exception {
         // fetch the sample and extract the origin and scale attributes
-        TiledMicroscopeDomainMgr domainMgr = new TiledMicroscopeDomainMgr(persistenceServer);
+        TiledMicroscopeDomainMgr domainMgr = new TiledMicroscopeDomainMgr(persistenceServer, null);
         TmSample sample = domainMgr.getSampleByWorkspaceId(workspaceId, user);
 
         // if no origin or scale attributes, stop (old sample)

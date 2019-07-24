@@ -1,5 +1,14 @@
 package org.janelia.messaging.broker;
 
+import java.io.IOException;
+
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -8,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.glassfish.jersey.apache.connector.ApacheClientProperties;
@@ -16,12 +26,6 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
 
 /**
  * A web client providing access to the Tiled Microscope REST Service.
@@ -32,11 +36,13 @@ public class AbstractRestClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRestClient.class);
 
-    protected final Client client;
     protected final String serverURL;
+    private final String apiKey;
+    protected final WebTarget serverTarget;
 
-    protected AbstractRestClient(String serverURL) {
+    protected AbstractRestClient(String serverURL, String apiKey) {
         this.serverURL = StringUtils.appendIfMissing(serverURL, "/");
+        this.apiKey = apiKey;
         JacksonJsonProvider provider = new JacksonJaxbJsonProvider();
         ObjectMapper mapper = provider.locateMapper(Object.class, MediaType.APPLICATION_JSON_TYPE);
         mapper.addHandler(new DeserializationProblemHandler() {
@@ -58,9 +64,21 @@ public class AbstractRestClient {
 
         clientConfig.property(ApacheClientProperties.CONNECTION_MANAGER, connectionManager);
 
-        this.client = ClientBuilder.newClient();
+        Client client = ClientBuilder.newClient();
         client.register(provider);
         client.register(MultiPartFeature.class);
+
+        serverTarget = client.target(serverURL);
+    }
+
+    protected Invocation.Builder createRequestWithCredentials(Invocation.Builder requestBuilder) {
+        Invocation.Builder requestWithCredentialsBuilder = requestBuilder;
+        if (StringUtils.isNotBlank(apiKey)) {
+            requestWithCredentialsBuilder = requestWithCredentialsBuilder.header(
+                    "Authorization",
+                    "APIKEY " + apiKey);
+        }
+        return requestWithCredentialsBuilder;
     }
 
     protected boolean checkResponse(Response response, String failureError) {

@@ -17,14 +17,17 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
     private static final Logger LOG = LoggerFactory.getLogger(RestIndexingService.class);
     private static final String INDEXING_ENDPOINT_PATH = "data/searchIndex";
 
-    public RestIndexingService(String serverURL) {
-        super(serverURL);
+    private final WebTarget endpointTarget;
+
+    RestIndexingService(String serverURL, String apiKey) {
+        super(serverURL, apiKey);
+        endpointTarget = serverTarget.path(INDEXING_ENDPOINT_PATH);
     }
 
     @Override
     public void indexDocReferences(List<Reference> docReferences) {
-        Response response = getIndexingEndpoint()
-                .request()
+        Response response = createRequestWithCredentials(
+                endpointTarget.request())
                 .post(Entity.entity(docReferences, MediaType.APPLICATION_JSON_TYPE));
         checkResponse(response, "index documents: " + docReferences);
         response.close();
@@ -32,9 +35,10 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
 
     @Override
     public void remmoveDocIds(List<Long> docIds) {
-        Response response = getIndexingEndpoint()
-                .path("docsToRemove")
-                .request()
+        Response response = createRequestWithCredentials(
+                endpointTarget
+                        .path("docsToRemove")
+                        .request())
                 .post(Entity.entity(docIds, MediaType.APPLICATION_JSON_TYPE));
         checkResponse(response, "removed documents: " + docIds);
         response.close();
@@ -42,18 +46,13 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
 
     @Override
     public void addAncestorToDocs(Long ancestorId, List<Long> docIds) {
-        Response response = getIndexingEndpoint()
-                .path(ancestorId.toString()).path("descendants")
-                .request()
+        Response response = createRequestWithCredentials(
+                endpointTarget
+                        .path(ancestorId.toString()).path("descendants")
+                        .request())
                 .put(Entity.entity(docIds, MediaType.APPLICATION_JSON_TYPE));
         checkResponse(response, "add ancestor " + ancestorId + " to " + docIds);
         response.close();
-    }
-
-    WebTarget getIndexingEndpoint() {
-        LOG.info("Endpoint target: {}", serverURL + INDEXING_ENDPOINT_PATH);
-        return client.target(serverURL)
-                .path(INDEXING_ENDPOINT_PATH);
     }
 
 }

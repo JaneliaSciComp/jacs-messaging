@@ -34,7 +34,7 @@ public class NeuronBrokerAdapter extends BrokerAdapter {
         MessageHandler.HandlerCallback errorCallback = successCallback.andThen(((messageHeaders, messageBody) -> replyErrorSender.sendMessage(messageHeaders, messageBody)));
 
         return new PersistNeuronHandler(
-                new TiledMicroscopeDomainMgr(persistenceServer),
+                new TiledMicroscopeDomainMgr(persistenceServer, adapterArgs.getAdapterConfig("persistenceApiKey")),
                 sharedSpaceOwner,
                 successCallback,
                 errorCallback

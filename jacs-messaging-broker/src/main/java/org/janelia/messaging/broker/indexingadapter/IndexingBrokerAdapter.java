@@ -62,7 +62,9 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
     }
 
     private IndexingService createIndexingService(BrokerAdapterArgs adapterArgs) {
-        return new RestIndexingService(adapterArgs.getAdapterConfig("indexingServer"));
+        return new RestIndexingService(
+                adapterArgs.getAdapterConfig("indexingServer"),
+                adapterArgs.getAdapterConfig("indexingApiKey"));
     }
 
     @Override
