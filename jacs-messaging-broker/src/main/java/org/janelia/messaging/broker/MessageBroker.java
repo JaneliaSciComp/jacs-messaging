@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.JCommander;
@@ -102,6 +103,7 @@ public class MessageBroker {
         for (BrokerAdapterFactory<?> brokerAdapterFactory : brokerAdapterFactories) {
             BrokerAdapter ba = brokerAdapterFactory.createBrokerAdapter(brokerAdapterFactory.getBrokerAdapterArgs(config));
             if (ba.isEnabled()) {
+                AtomicReference<Throwable> errorHolder = new AtomicReference<>(null);
                 MessageConnection messageConnection = ConnectionManager.getInstance()
                         .getConnection(new ConnectionParameters()
                                 .setHost(mb.messagingServer)
@@ -109,11 +111,18 @@ public class MessageBroker {
                                 .setPassword(mb.messagingPassword)
                                 .setMaxRetries(config.getIntegerPropertyValue("connection.maxRetries", 1))
                                 .setPauseBetweenRetriesInMillis(config.getLongPropertyValue("connection.pauseBetweenRetriesInMillis", 100L))
-                                .setConsumerThreads(mb.consumerThreads)
+                                .setConsumerThreads(mb.consumerThreads),
+                                (error) -> {
+                                    errorHolder.set(error);
+                                }
                         )
                         ;
-                LOG.info("Start broker {}", brokerAdapterFactory.getName());
-                mb.startBroker(messageConnection, ba, 5);
+                if (errorHolder.get() == null) {
+                    LOG.info("Start broker {}", brokerAdapterFactory.getName());
+                    mb.startBroker(messageConnection, ba, 5);
+                } else {
+                    LOG.error("Could not connect to {} using {}", mb.messagingServer, mb.messagingUser, errorHolder.get());
+                }
             }
         }
     }
