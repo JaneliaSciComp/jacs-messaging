@@ -9,12 +9,9 @@ import javax.ws.rs.core.Response;
 
 import org.janelia.messaging.broker.AbstractRestClient;
 import org.janelia.model.domain.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class RestIndexingService extends AbstractRestClient implements IndexingService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RestIndexingService.class);
     private static final String INDEXING_ENDPOINT_PATH = "data/searchIndex";
 
     private final WebTarget endpointTarget;
@@ -27,7 +24,7 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
     @Override
     public void indexDocReferences(List<Reference> docReferences) {
         Response response = createRequestWithCredentials(
-                endpointTarget.request())
+                endpointTarget)
                 .post(Entity.entity(docReferences, MediaType.APPLICATION_JSON_TYPE));
         checkResponse(response, "index documents: " + docReferences);
         response.close();
@@ -37,8 +34,7 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
     public void remmoveDocIds(List<Long> docIds) {
         Response response = createRequestWithCredentials(
                 endpointTarget
-                        .path("docsToRemove")
-                        .request())
+                        .path("docsToRemove"))
                 .post(Entity.entity(docIds, MediaType.APPLICATION_JSON_TYPE));
         checkResponse(response, "removed documents: " + docIds);
         response.close();
@@ -48,8 +44,7 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
     public void addAncestorToDocs(Long ancestorId, List<Long> docIds) {
         Response response = createRequestWithCredentials(
                 endpointTarget
-                        .path(ancestorId.toString()).path("descendants")
-                        .request())
+                        .path(ancestorId.toString()).path("descendants"))
                 .put(Entity.entity(docIds, MediaType.APPLICATION_JSON_TYPE));
         checkResponse(response, "add ancestor " + ancestorId + " to " + docIds);
         response.close();

@@ -1,7 +1,5 @@
 package org.janelia.messaging.broker;
 
-import java.io.IOException;
-
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
@@ -10,7 +8,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +44,7 @@ public class AbstractRestClient {
         ObjectMapper mapper = provider.locateMapper(Object.class, MediaType.APPLICATION_JSON_TYPE);
         mapper.addHandler(new DeserializationProblemHandler() {
             @Override
-            public boolean handleUnknownProperty(DeserializationContext ctxt, JsonParser jp, JsonDeserializer<?> deserializer, Object beanOrClass, String propertyName) throws IOException, JsonProcessingException {
+            public boolean handleUnknownProperty(DeserializationContext ctxt, JsonParser jp, JsonDeserializer<?> deserializer, Object beanOrClass, String propertyName) {
                 LOG.error("Failed to deserialize property which does not exist in model: {}.{}", beanOrClass.getClass().getName(), propertyName);
                 return true;
             }
@@ -71,14 +68,15 @@ public class AbstractRestClient {
         serverTarget = client.target(serverURL);
     }
 
-    protected Invocation.Builder createRequestWithCredentials(Invocation.Builder requestBuilder) {
-        Invocation.Builder requestWithCredentialsBuilder = requestBuilder;
+    protected Invocation.Builder createRequestWithCredentials(WebTarget requestTarget) {
+        LOG.info("Create request {}", requestTarget);
         if (StringUtils.isNotBlank(apiKey)) {
-            requestWithCredentialsBuilder = requestWithCredentialsBuilder.header(
+            return requestTarget.request().header(
                     "Authorization",
                     "APIKEY " + apiKey);
+        } else {
+            return requestTarget.request();
         }
-        return requestWithCredentialsBuilder;
     }
 
     protected boolean checkResponse(Response response, String failureError) {
