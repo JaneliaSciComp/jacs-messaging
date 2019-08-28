@@ -6,6 +6,7 @@ import javax.media.jai.RenderedImageAdapter;
 
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
+import com.sun.media.jai.codec.ImageDecoder;
 import com.sun.media.jai.codec.SeekableStream;
 
 import Jama.Matrix;
@@ -36,7 +37,7 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
 
     private int[] calculateVolumeSize(TmSample sample) throws Exception {
         // replace this if running on mac
-        File topFolderParam = new File(sample.getFilepath().replaceAll("nrs", "Volumes"));
+        File topFolderParam = new File(sample.getLargeVolumeOctreeFilepath().replaceAll("nrs", "Volumes"));
 
         int octreeDepth = (int) sample.getNumImageryLevels().longValue();
         int zoomFactor = (int) Math.pow(2, octreeDepth - 1);
@@ -44,7 +45,7 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
         // Deduce other parameters from first image file contents
         File tiff = new File(topFolderParam, "default.0.tif");
         SeekableStream s = new FileSeekableStream(tiff);
-        com.sun.media.jai.codec.ImageDecoder decoder = ImageCodec.createImageDecoder("tiff", s, null);
+        ImageDecoder decoder = ImageCodec.createImageDecoder("tiff", s, null);
         // Z dimension is related to number of tiff pages
         int sz = decoder.getNumPages();
 
