@@ -63,7 +63,7 @@ class PersistNeuronHandler implements MessageHandler {
                         LOG.warn("User {} attempt to save neuron {} owned by {}", user, neuronMetadata, neuronMetadata.getOwnerKey());
                         return;
                     }
-                    handleSaveNeuronWithBody(messageHeaders, neuronMetadata, messageBody, user, neuron -> {
+                    handleSaveNeuron(messageHeaders, neuronMetadata, user, neuron -> {
                         try {
                             Map<String, Object> notifHeaders = newMessageHeaders(messageHeaders,
                                     ImmutableMap.of(NeuronMessageHeaders.METADATA, objectMapper.writeValueAsString(neuron)));
@@ -80,7 +80,7 @@ class PersistNeuronHandler implements MessageHandler {
                         LOG.warn("User {} attempt to save neuron metadata {} owned by {}", user, neuronMetadata, neuronMetadata.getOwnerKey());
                         return;
                     }
-                    handleSaveNeuronMetadata(messageHeaders, neuronMetadata, user, neuron -> {
+                    handleSaveNeuron(messageHeaders, neuronMetadata, user, neuron -> {
                         try {
                             Map<String, Object> notifHeaders = newMessageHeaders(messageHeaders,
                                     ImmutableMap.of(NeuronMessageHeaders.METADATA, objectMapper.writeValueAsString(neuron)));
@@ -168,19 +168,7 @@ class PersistNeuronHandler implements MessageHandler {
         }
     }
 
-    private void handleSaveNeuronWithBody(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, byte[] neuronBody, String user,
-                                          Consumer<TmNeuronMetadata> onSuccess) {
-        try {
-            TmNeuronMetadata persistedNeuron = domainMgr.save(neuronMetadata, neuronBody, user);
-            LOG.info("Persisted neuron {}", persistedNeuron);
-            onSuccess.accept(persistedNeuron);
-        } catch (Exception e) {
-            LOG.error("Error persisting neuron {} by {}", neuronMetadata, user, e);
-            fireErrorMessage(msgHeaders, "Problems persisting neuron data: " + e.getMessage());
-        }
-    }
-
-    private void handleSaveNeuronMetadata(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, String user,
+    private void handleSaveNeuron(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, String user,
                                           Consumer<TmNeuronMetadata> onSuccess) {
         try {
             TmNeuronMetadata persistedNeuron = domainMgr.saveMetadata(neuronMetadata, user);
