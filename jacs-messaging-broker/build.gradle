@@ -45,7 +45,7 @@ def neuronBrokerBaseName = "sharedWorkspaceBroker"
 task brokerJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
     manifest {
         attributes 'Implementation-Title': 'Shared Workspace Broker',
-                   'Implementation-Version': version,
+                   'Implementation-Version': archiveVersion,
                    'Main-Class': 'org.janelia.messaging.broker.MessageBroker'
     }
     archiveBaseName = "${neuronBrokerBaseName}"
@@ -60,7 +60,7 @@ task brokerJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
 task queueBackupJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
     manifest {
         attributes 'Implementation-Title': 'Shared Workspace Backup',
-                   'Implementation-Version': version,
+                   'Implementation-Version': archiveVersion,
                    'Main-Class': 'org.janelia.messaging.tools.QueueBackupTool'
     }
     archiveBaseName = "queueBackup"
@@ -75,7 +75,7 @@ task queueBackupJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
 task neuronRecoveryJar(type: Jar, dependsOn: ':jacs-messaging-core:jar') {
     manifest {
         attributes 'Implementation-Title': 'Shared Workspace Backup',
-                   'Implementation-Version': version,
+                   'Implementation-Version': archiveVersion,
                    'Main-Class': 'org.janelia.messaging.tools.NeuronRecoveryTool'
     }
     archiveBaseName = "neuronRecovery"
