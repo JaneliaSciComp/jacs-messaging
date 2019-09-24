@@ -23,9 +23,13 @@ public class ApplicationConfigProvider {
     private ApplicationConfig applicationConfig = new ApplicationConfigImpl();
 
     public ApplicationConfigProvider fromDefaultResources() {
+        return fromResource(DEFAULT_APPLICATION_CONFIG_RESOURCES);
+    }
+
+    public ApplicationConfigProvider fromEnv() {
         return fromProperties(System.getProperties())
                 .fromMap(System.getenv().entrySet().stream().collect(Collectors.toMap(entry -> "env." + entry.getKey(), Map.Entry::getValue)))
-                .fromResource(DEFAULT_APPLICATION_CONFIG_RESOURCES);
+                ;
     }
 
     public ApplicationConfigProvider fromResource(String resourceName) {
