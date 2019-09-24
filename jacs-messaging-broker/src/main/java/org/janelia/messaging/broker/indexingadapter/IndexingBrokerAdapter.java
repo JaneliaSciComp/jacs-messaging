@@ -69,7 +69,6 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
 
     @Override
     public MessageHandler getMessageHandler(MessageConnection messageConnection) {
-
         MessageSender replySuccessSender;
         if (StringUtils.isNotBlank(adapterArgs.getSuccessResponseExchange())) {
             LOG.info("Forward indexing requests to '{}' using routing key '{}'",

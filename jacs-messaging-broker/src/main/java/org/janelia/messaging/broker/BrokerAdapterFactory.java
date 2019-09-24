@@ -1,18 +1,19 @@
 package org.janelia.messaging.broker;
 
-import org.janelia.messaging.config.ApplicationConfig;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
-import java.util.stream.Collectors;
+
+import org.janelia.messaging.config.ApplicationConfig;
 
 public abstract class BrokerAdapterFactory<T extends BrokerAdapter> {
 
-    public BrokerAdapterArgs getBrokerAdapterArgs(ApplicationConfig config) {
+    BrokerAdapterArgs getBrokerAdapterArgs(ApplicationConfig config) {
         return new BrokerAdapterArgs(
                 getName(),
                 config.asMap().entrySet().stream()
-                .filter(ce -> ce.getKey().startsWith(getName() + "."))
-                .collect(Collectors.toMap(ce -> ce.getKey().substring(getName().length() + 1), ce -> ce.getValue()))
+                        .filter(ce -> ce.getKey().startsWith(getName() + "."))
+                        .collect(Collectors.toMap(ce -> ce.getKey().substring(getName().length() + 1), ce -> ce.getValue()))
         );
     }
 
