@@ -103,6 +103,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     public TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, String subjectKey) {
         DomainQuery query = new DomainQuery();
         query.setDomainObject(neuronMetadata);
+        query.setSubjectKey(subjectKey);
         WebTarget target =  getMouselightEndpoint("/workspace/neuron", subjectKey);
         Response response = target
                 .request()
@@ -116,10 +117,21 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     }
 
     TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, String subjectKey) {
-        List<TmNeuronMetadata> list = updateNeurons(Arrays.asList(neuronMetadata), subjectKey);
-        if (list.isEmpty()) return null;
-        if (list.size() > 1) LOG.warn("update(TmNeuronMetadata) returned more than one result.");
-        return list.get(0);
+        LOG.info("NEURON METAEDAAT STUFF: {}",neuronMetadata.getRootAnnotationCount());
+        DomainQuery query = new DomainQuery();
+        query.setDomainObject(neuronMetadata);
+        query.setSubjectKey(subjectKey);
+        Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
+                .queryParam("subjectKey",subjectKey)
+                .request()
+                .header("username", subjectKey)
+                .post(Entity.json(query));
+        if (checkResponse(response, "update: " + neuronMetadata)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+
+        return response.readEntity(TmNeuronMetadata.class);
     }
 
 
@@ -129,6 +141,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         String logStr = neurons.size() + " neurons";
 
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
+                .queryParam("subjectKey",subjectKey)
                 .request()
                 .header("username", subjectKey)
                 .post(Entity.json(neurons));

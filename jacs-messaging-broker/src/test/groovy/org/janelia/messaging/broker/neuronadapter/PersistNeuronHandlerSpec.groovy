@@ -95,14 +95,13 @@ class PersistNeuronHandlerSpec extends Specification {
         def msgBody = "This is the message body".bytes
 
         and:
-        domainMgr.save(_, _, _) >> user1Neuron
+        domainMgr.saveMetadata(_, _) >> user1Neuron
 
         when:
         persistNeuronHandler.handleMessage(msgHeader, msgBody)
 
         then:
-        1 * domainMgr.save(_, _, _)
-        0 * domainMgr.saveMetadata(_, _)
+        1 * domainMgr.saveMetadata(_, _)
         1 * replySuccessSender.sendMessage(_, _)
         0 * replyErrorSender.sendMessage(_, _)
     }
