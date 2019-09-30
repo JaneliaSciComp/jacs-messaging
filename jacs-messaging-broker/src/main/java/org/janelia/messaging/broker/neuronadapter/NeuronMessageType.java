@@ -10,7 +10,6 @@ package org.janelia.messaging.broker.neuronadapter;
 public enum NeuronMessageType {
     NEURON_CREATE,
     NEURON_SAVE_NEURONDATA,
-    NEURON_SAVE_METADATA,
     NEURON_DELETE,
     REQUEST_NEURON_OWNERSHIP,
     REQUEST_NEURON_ASSIGNMENT,
