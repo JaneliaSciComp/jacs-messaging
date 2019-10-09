@@ -117,7 +117,6 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     }
 
     TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, String subjectKey) {
-        LOG.info("NEURON METAEDAAT STUFF: {}",neuronMetadata.getRootAnnotationCount());
         DomainQuery query = new DomainQuery();
         query.setDomainObject(neuronMetadata);
         query.setSubjectKey(subjectKey);
@@ -156,6 +155,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     void remove(TmNeuronMetadata neuronMetadata, String subjectKey) {
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
                 .queryParam("neuronId", neuronMetadata.getId())
+                .queryParam("isLarge", neuronMetadata.isLargeNeuron())
                 .request()
                 .header("username", subjectKey)
                 .delete();
