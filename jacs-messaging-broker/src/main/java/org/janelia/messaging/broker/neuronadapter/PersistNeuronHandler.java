@@ -50,7 +50,7 @@ class PersistNeuronHandler implements MessageHandler {
         LOG.info("Processing request {}", messageHeaders);
         String user = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER);
         NeuronMessageType action = NeuronMessageType.valueOf(MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.TYPE));
-        TmNeuronMetadata neuronMetadata = extractNeuron(messageHeaders);
+        TmNeuronMetadata neuronMetadata = extractNeuron(messageHeaders, messageBody);
         if (neuronMetadata != null) {
             switch (action) {
                 case NEURON_DELETE:
@@ -63,29 +63,10 @@ class PersistNeuronHandler implements MessageHandler {
                         LOG.warn("User {} attempt to save neuron {} owned by {}", user, neuronMetadata, neuronMetadata.getOwnerKey());
                         return;
                     }
-                    handleSaveNeuronWithBody(messageHeaders, neuronMetadata, messageBody, user, neuron -> {
+                    handleSaveNeuron(messageHeaders, neuronMetadata, user, neuron -> {
                         try {
-                            Map<String, Object> notifHeaders = newMessageHeaders(messageHeaders,
-                                    ImmutableMap.of(NeuronMessageHeaders.METADATA, objectMapper.writeValueAsString(neuron)));
                             LOG.info("Sending out broadcast refresh for persisted neuron with body {}", neuron);
-                            successCallback.callback(notifHeaders, messageBody);
-                        } catch (Exception e) {
-                            throw new IllegalStateException(e);
-                        }
-                    });
-                    break;
-                case NEURON_SAVE_METADATA:
-                    if (!user.equals(neuronMetadata.getOwnerKey())) {
-                        // probably should fire off rejection message but for now just log the message
-                        LOG.warn("User {} attempt to save neuron metadata {} owned by {}", user, neuronMetadata, neuronMetadata.getOwnerKey());
-                        return;
-                    }
-                    handleSaveNeuronMetadata(messageHeaders, neuronMetadata, user, neuron -> {
-                        try {
-                            Map<String, Object> notifHeaders = newMessageHeaders(messageHeaders,
-                                    ImmutableMap.of(NeuronMessageHeaders.METADATA, objectMapper.writeValueAsString(neuron)));
-                            LOG.info("Sending out broadcast refresh for persisted neuron metadata {}", neuron);
-                            successCallback.callback(notifHeaders, messageBody);
+                            successCallback.callback(messageHeaders, objectMapper.writeValueAsBytes(neuron));
                         } catch (Exception e) {
                             throw new IllegalStateException(e);
                         }
@@ -94,7 +75,7 @@ class PersistNeuronHandler implements MessageHandler {
                 case REQUEST_NEURON_ASSIGNMENT:
                     handleReassignNeuron(messageHeaders, neuronMetadata, user, (neuron) -> {
                         try {
-                            fireApprovalMessage(neuron, user, true, objectMapper.writeValueAsString(neuron));
+                            fireApprovalMessage(neuron, user, true, objectMapper.writeValueAsBytes(neuron));
                         } catch (Exception e) {
                             throw new IllegalStateException(e);
                         }
@@ -104,7 +85,7 @@ class PersistNeuronHandler implements MessageHandler {
                     // process response from neuron owner
                     handleOwnershipDecision(messageHeaders, user, (neuron, decision) -> {
                         try {
-                            fireApprovalMessage(neuron, user, decision, objectMapper.writeValueAsString(neuron));
+                            fireApprovalMessage(neuron, user, decision, objectMapper.writeValueAsBytes(neuron));
                         } catch (Exception e) {
                             throw new IllegalStateException(e);
                         }
@@ -113,7 +94,7 @@ class PersistNeuronHandler implements MessageHandler {
                 case REQUEST_NEURON_OWNERSHIP:
                     handleOwnershipRequest(messageHeaders, user, (neuron, decision) -> {
                         try {
-                            fireApprovalMessage(neuron, user, decision, objectMapper.writeValueAsString(neuron));
+                            fireApprovalMessage(neuron, user, decision, objectMapper.writeValueAsBytes(neuron));
                         } catch (Exception e) {
                             throw new IllegalStateException(e);
                         }
@@ -128,18 +109,18 @@ class PersistNeuronHandler implements MessageHandler {
         LOG.error("Canceled message for {}", routingTag);
     }
 
-    private TmNeuronMetadata extractNeuron(Map<String, Object> msgHeaders) {
+    private TmNeuronMetadata extractNeuron(Map<String, Object> msgHeaders, byte[] messageBody) {
+        String neuronIds = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.NEURONIDS);
         try {
-            String metadata = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.METADATA);
-            if (StringUtils.isNotBlank(metadata)) {
-                return objectMapper.readValue(metadata, TmNeuronMetadata.class);
+            if (messageBody.length>0) {
+                return objectMapper.readValue(messageBody, TmNeuronMetadata.class);
             } else {
-                LOG.info("No neuron metadata present in the message headers: {}", msgHeaders);
+                LOG.info("No neuron data present in the message body");
                 return null;
             }
         } catch (Exception e) {
-            LOG.error("Error unmarshalling neuron metadata from {}", msgHeaders, e);
-            fireErrorMessage(msgHeaders, "Problems unmarshalling neuron data from " + msgHeaders.get(NeuronMessageHeaders.METADATA) + " -> " + e.getMessage());
+            LOG.error("Error unmarshalling neuron data from {}", neuronIds, e);
+            fireErrorMessage(msgHeaders, "Problems unmarshalling neuron data from " + msgHeaders.get(NeuronMessageHeaders.NEURONIDS) + " -> " + e.getMessage());
         }
         return null;
     }
@@ -168,19 +149,7 @@ class PersistNeuronHandler implements MessageHandler {
         }
     }
 
-    private void handleSaveNeuronWithBody(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, byte[] neuronBody, String user,
-                                          Consumer<TmNeuronMetadata> onSuccess) {
-        try {
-            TmNeuronMetadata persistedNeuron = domainMgr.save(neuronMetadata, neuronBody, user);
-            LOG.info("Persisted neuron {}", persistedNeuron);
-            onSuccess.accept(persistedNeuron);
-        } catch (Exception e) {
-            LOG.error("Error persisting neuron {} by {}", neuronMetadata, user, e);
-            fireErrorMessage(msgHeaders, "Problems persisting neuron data: " + e.getMessage());
-        }
-    }
-
-    private void handleSaveNeuronMetadata(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, String user,
+    private void handleSaveNeuron(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, String user,
                                           Consumer<TmNeuronMetadata> onSuccess) {
         try {
             TmNeuronMetadata persistedNeuron = domainMgr.saveMetadata(neuronMetadata, user);
@@ -282,7 +251,7 @@ class PersistNeuronHandler implements MessageHandler {
 
     }
 
-    private void fireApprovalMessage(TmNeuronMetadata neuron, String user, boolean approval, String metadata) {
+    private void fireApprovalMessage(TmNeuronMetadata neuron, String user, boolean approval, byte[] neuronData) {
         Map<String, Object> msgHeaders = new HashMap<>();
         msgHeaders.put(NeuronMessageHeaders.TYPE, NeuronMessageType.NEURON_OWNERSHIP_DECISION.toString());
         msgHeaders.put(NeuronMessageHeaders.NEURONIDS, ImmutableList.of(neuron.getId().toString()));
@@ -290,10 +259,8 @@ class PersistNeuronHandler implements MessageHandler {
         msgHeaders.put(NeuronMessageHeaders.WORKSPACE, neuron.getWorkspaceId().toString());
         msgHeaders.put(NeuronMessageHeaders.DECISION, String.valueOf(approval));
         msgHeaders.put(NeuronMessageHeaders.DESCRIPTION, "Ownership approved by Neuron Owner");
-        msgHeaders.put(NeuronMessageHeaders.METADATA, metadata);
-
         LOG.info("Sending out neuron ownership message for neuron ID: {} with {}", neuron.getId(), msgHeaders);
-        successCallback.callback(msgHeaders, " ".getBytes());
+        successCallback.callback(msgHeaders, neuronData);
     }
 
 }

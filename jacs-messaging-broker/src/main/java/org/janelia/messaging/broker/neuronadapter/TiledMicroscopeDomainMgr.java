@@ -8,6 +8,7 @@ import java.util.List;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
+import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +33,9 @@ public class TiledMicroscopeDomainMgr {
         log.debug("save({})", neuronMetadata);
         TmNeuronMetadata savedMetadata;
         if (neuronMetadata.getId() == null) {
-            savedMetadata = client.createMetadata(neuronMetadata, subjectKey);
+            savedMetadata = client.create(neuronMetadata, subjectKey);
         } else {
-            savedMetadata = client.updateMetadata(neuronMetadata, subjectKey);
+            savedMetadata = client.update(neuronMetadata, subjectKey);
         }
         return savedMetadata;
     }
@@ -46,7 +47,7 @@ public class TiledMicroscopeDomainMgr {
                 throw new IllegalArgumentException("Bulk neuron creation is currently unsupported");
             }
         }
-        List<TmNeuronMetadata> updatedMetadata = client.updateMetadata(neuronList, subjectKey);
+        List<TmNeuronMetadata> updatedMetadata = client.updateNeurons(neuronList, subjectKey);
         return updatedMetadata;
     }
 
@@ -68,19 +69,25 @@ public class TiledMicroscopeDomainMgr {
         return null;
     }
 
-    public TmNeuronMetadata save(TmNeuronMetadata neuronMetadata, byte[] protoBytes, String subjectKey) throws Exception {
+    public TmWorkspace save(TmWorkspace workspace, String subjectKey) throws Exception {
+        log.debug("save({})", workspace.getId());
+        workspace = client.save(workspace, subjectKey);
+        return workspace;
+    }
+
+    public void remove(TmWorkspace workspace, String subjectKey) throws Exception {
+        log.debug("remove({})", workspace);
+        client.remove(workspace, subjectKey);
+    }
+
+    public TmNeuronMetadata save(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
         log.debug("save({})", neuronMetadata);
-        TmProtobufExchanger exchanger = new TmProtobufExchanger();
-        InputStream protobufStream = new ByteArrayInputStream(protoBytes);
         TmNeuronMetadata savedMetadata;
         if (neuronMetadata.getId() == null) {
-            savedMetadata = client.create(neuronMetadata, protobufStream, subjectKey);
+            savedMetadata = client.create(neuronMetadata, subjectKey);
         } else {
-            savedMetadata = client.update(neuronMetadata, protobufStream, subjectKey);
+            savedMetadata = client.update(neuronMetadata, subjectKey);
         }
-        // We assume that the neuron data was saved on the server, but it only returns metadata for efficiency. We
-        // already have the data, so let's copy it over into the new object.
-        exchanger.copyNeuronData(neuronMetadata, savedMetadata);
         return savedMetadata;
     }
 

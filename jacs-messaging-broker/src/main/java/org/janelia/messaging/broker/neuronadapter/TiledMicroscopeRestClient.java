@@ -23,6 +23,7 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartMediaTypes;
 import org.janelia.messaging.broker.AbstractRestClient;
+import org.janelia.model.domain.dto.DomainQuery;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
@@ -70,20 +71,6 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         return response.readEntity(new GenericType<List<TmNeuronMetadata>>() {});
     }
 
-    TmNeuronMetadata createMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) {
-        FormDataMultiPart multiPart = new FormDataMultiPart()
-                .field("neuronMetadata", neuronMetadata, MediaType.APPLICATION_JSON_TYPE);
-        Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
-                .request()
-                .header("username", subjectKey)
-                .put(Entity.entity(multiPart, multiPart.getMediaType()));
-        if (checkResponse(response, "createMetadata: " + neuronMetadata)) {
-            response.close();
-            throw new WebApplicationException(response);
-        }
-        return response.readEntity(TmNeuronMetadata.class);
-    }
-
     TmSample getSampleForWorkspace(Long workspaceId, String subjectKey) {
         LOG.info("Workspace request on {}", workspaceId);
         Response response = getMouselightEndpoint("/workspace/{workspaceId}", subjectKey)
@@ -113,14 +100,15 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         }
     }
 
-    TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, InputStream protobufStream, String subjectKey) {
-        FormDataMultiPart multiPart = new FormDataMultiPart()
-                .field("neuronMetadata", neuronMetadata, MediaType.APPLICATION_JSON_TYPE)
-                .field("protobufBytes", protobufStream, MediaType.APPLICATION_OCTET_STREAM_TYPE);
-        Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
+    public TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setDomainObject(neuronMetadata);
+        query.setSubjectKey(subjectKey);
+        WebTarget target =  getMouselightEndpoint("/workspace/neuron", subjectKey);
+        Response response = target
                 .request()
                 .header("username", subjectKey)
-                .put(Entity.entity(multiPart, multiPart.getMediaType()));
+                .put(Entity.json(query));
         if (checkResponse(response, "create: " + neuronMetadata)) {
             response.close();
             throw new WebApplicationException(response);
@@ -128,49 +116,35 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
-    TmNeuronMetadata updateMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) {
-        return update(neuronMetadata, null, subjectKey);
-    }
 
-    TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, InputStream protobufStream, String subjectKey) {
-        List<TmNeuronMetadata> list = update(Arrays.asList(Pair.of(neuronMetadata, protobufStream)), subjectKey);
-        if (list.isEmpty()) return null;
-        if (list.size() > 1) LOG.warn("update(TmNeuronMetadata) returned more than one result.");
-        return list.get(0);
-    }
-
-    List<TmNeuronMetadata> updateMetadata(List<TmNeuronMetadata> neuronList, String subjectKey) {
-        List<Pair<TmNeuronMetadata, InputStream>> pairs = new ArrayList<>();
-        for (TmNeuronMetadata tmNeuronMetadata : neuronList) {
-            pairs.add(Pair.of(tmNeuronMetadata, null));
-        }
-        return update(pairs, subjectKey);
-    }
-
-    private List<TmNeuronMetadata> update(Collection<Pair<TmNeuronMetadata, InputStream>> neuronPairs, String subjectKey) {
-        if (neuronPairs.isEmpty()) return Collections.emptyList();
-        MultiPart multiPartEntity = new MultiPart();
-        for (Pair<TmNeuronMetadata, InputStream> neuronPair : neuronPairs) {
-            multiPartEntity.bodyPart(new BodyPart(neuronPair.getLeft(), MediaType.APPLICATION_JSON_TYPE));
-            if (neuronPair.getRight() != null) {
-                multiPartEntity.bodyPart(new BodyPart(neuronPair.getRight(), MediaType.APPLICATION_OCTET_STREAM_TYPE));
-            } else {
-                multiPartEntity.bodyPart(new BodyPart("", MediaType.TEXT_PLAIN_TYPE));
-            }
-        }
-
-        String logStr;
-        if (neuronPairs.size() == 1) {
-            TmNeuronMetadata neuron = neuronPairs.iterator().next().getLeft();
-            logStr = neuron == null ? "null neuron" : neuron.toString();
-        } else {
-            logStr = neuronPairs.size() + " neurons";
-        }
-
+    TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setDomainObject(neuronMetadata);
+        query.setSubjectKey(subjectKey);
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
+                .queryParam("subjectKey",subjectKey)
                 .request()
                 .header("username", subjectKey)
-                .post(Entity.entity(multiPartEntity, MultiPartMediaTypes.MULTIPART_MIXED));
+                .post(Entity.json(query));
+        if (checkResponse(response, "update: " + neuronMetadata)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+
+        return response.readEntity(TmNeuronMetadata.class);
+    }
+
+
+    public List<TmNeuronMetadata> updateNeurons(Collection<TmNeuronMetadata> neurons, String subjectKey) {
+        if (neurons.isEmpty()) return Collections.emptyList();
+
+        String logStr = neurons.size() + " neurons";
+
+        Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
+                .queryParam("subjectKey",subjectKey)
+                .request()
+                .header("username", subjectKey)
+                .post(Entity.json(neurons));
         if (checkResponse(response, "update: " + logStr)) {
             response.close();
             throw new WebApplicationException(response);
@@ -182,6 +156,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
     void remove(TmNeuronMetadata neuronMetadata, String subjectKey) {
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
                 .queryParam("neuronId", neuronMetadata.getId())
+                .queryParam("isLarge", neuronMetadata.isLargeNeuron())
                 .request()
                 .header("username", subjectKey)
                 .delete();
@@ -189,6 +164,34 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
             response.close();
             throw new WebApplicationException(response);
         }
+    }
+
+
+    public void remove(TmWorkspace tmWorkspace, String subjectKey) {
+        WebTarget target = getMouselightEndpoint("/workspace", subjectKey)
+                .queryParam("workspaceId", tmWorkspace.getId());
+        Response response = target
+                .request("application/json")
+                .delete();
+        if (checkResponse(response, "delete: " + tmWorkspace)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+    }
+
+    public TmWorkspace save(TmWorkspace tmWorkspace, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setSubjectKey(subjectKey);
+        query.setDomainObject(tmWorkspace);
+        WebTarget target = getMouselightEndpoint("/workspace", subjectKey);
+        Response response = target
+                .request("application/json")
+                .put(Entity.json(query));
+        if (checkResponse(response, "create: " + tmWorkspace)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmWorkspace.class);
     }
 
     TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) {
