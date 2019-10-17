@@ -8,6 +8,7 @@ import java.util.List;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
+import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,17 @@ public class TiledMicroscopeDomainMgr {
             return neuronMetadataList.get(0);
         }
         return null;
+    }
+
+    public TmWorkspace save(TmWorkspace workspace, String subjectKey) throws Exception {
+        log.debug("save({})", workspace.getId());
+        workspace = client.save(workspace, subjectKey);
+        return workspace;
+    }
+
+    public void remove(TmWorkspace workspace, String subjectKey) throws Exception {
+        log.debug("remove({})", workspace);
+        client.remove(workspace, subjectKey);
     }
 
     public TmNeuronMetadata save(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {

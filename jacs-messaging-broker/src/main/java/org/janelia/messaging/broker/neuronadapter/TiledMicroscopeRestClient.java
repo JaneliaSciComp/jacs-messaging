@@ -116,6 +116,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
+
     TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, String subjectKey) {
         DomainQuery query = new DomainQuery();
         query.setDomainObject(neuronMetadata);
@@ -163,6 +164,34 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
             response.close();
             throw new WebApplicationException(response);
         }
+    }
+
+
+    public void remove(TmWorkspace tmWorkspace, String subjectKey) {
+        WebTarget target = getMouselightEndpoint("/workspace", subjectKey)
+                .queryParam("workspaceId", tmWorkspace.getId());
+        Response response = target
+                .request("application/json")
+                .delete();
+        if (checkResponse(response, "delete: " + tmWorkspace)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+    }
+
+    public TmWorkspace save(TmWorkspace tmWorkspace, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setSubjectKey(subjectKey);
+        query.setDomainObject(tmWorkspace);
+        WebTarget target = getMouselightEndpoint("/workspace", subjectKey);
+        Response response = target
+                .request("application/json")
+                .put(Entity.json(query));
+        if (checkResponse(response, "create: " + tmWorkspace)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmWorkspace.class);
     }
 
     TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) {
