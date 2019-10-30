@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.janelia.model.domain.Reference;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
@@ -51,18 +52,18 @@ public class TiledMicroscopeDomainMgr {
         return updatedMetadata;
     }
 
-    public List<TmNeuronMetadata> retrieve(List<String> neuronIds, String subjectKey) throws Exception {
+    public List<TmNeuronMetadata> retrieve(String workspaceId, List<String> neuronIds, String subjectKey) throws Exception {
         log.debug("retrieve({})", neuronIds);
-        List<TmNeuronMetadata> neuronMetadataList = client.getNeuronMetadata(neuronIds, subjectKey);
+        List<TmNeuronMetadata> neuronMetadataList = client.getNeuronMetadata(workspaceId, neuronIds, subjectKey);
 
         return neuronMetadataList;
     }
 
-    public TmNeuronMetadata retrieve(String neuronId, String subjectKey) throws Exception {
+    public TmNeuronMetadata retrieve(String workspaceId, String neuronId, String subjectKey) throws Exception {
         List<String> neuronIds = new ArrayList<String>();
         neuronIds.add(neuronId);
         log.debug("retrieve({})", neuronIds);
-        List<TmNeuronMetadata> neuronMetadataList = client.getNeuronMetadata(neuronIds, subjectKey);
+        List<TmNeuronMetadata> neuronMetadataList = client.getNeuronMetadata(workspaceId, neuronIds, subjectKey);
         if (neuronMetadataList != null && neuronMetadataList.size() == 1) {
             return neuronMetadataList.get(0);
         }
@@ -93,9 +94,7 @@ public class TiledMicroscopeDomainMgr {
 
     public void remove(TmNeuronMetadata tmNeuron, String subjectKey) throws Exception {
         log.debug("remove({})", tmNeuron);
-        TmNeuronMetadata neuronMetadata = new TmNeuronMetadata();
-        neuronMetadata.setId(tmNeuron.getId());
-        client.remove(neuronMetadata, subjectKey);
+        client.remove(tmNeuron, subjectKey);
     }
 
     public TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) throws Exception {

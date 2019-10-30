@@ -23,10 +23,13 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
 import org.glassfish.jersey.media.multipart.MultiPartMediaTypes;
 import org.janelia.messaging.broker.AbstractRestClient;
+import org.janelia.model.domain.DomainConstants;
+import org.janelia.model.domain.Reference;
 import org.janelia.model.domain.dto.DomainQuery;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
 import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
+import org.janelia.model.domain.workspace.TreeNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,9 +60,10 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         return serverTarget.path(REMOTE_DOMAIN_PERMISSIONS_PREFIX);
     }
 
-    List<TmNeuronMetadata> getNeuronMetadata(List<String> neuronIds, String subjectKey) {
+    List<TmNeuronMetadata> getNeuronMetadata(String workspaceId, List<String> neuronIds, String subjectKey) {
         String parsedNeuronIds = StringUtils.join(neuronIds, ",");
         Response response = getMouselightEndpoint("/neuron/metadata", subjectKey)
+                .queryParam("workspaceId", workspaceId)
                 .queryParam("neuronIds", parsedNeuronIds)
                 .request()
                 .header("username", subjectKey)
@@ -69,6 +73,20 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
             throw new WebApplicationException(response);
         }
         return response.readEntity(new GenericType<List<TmNeuronMetadata>>() {});
+    }
+
+    TmSample getSample (Long sampleId, String subjectKey) {
+        LOG.info("Sample ID request on {}", sampleId);
+        Response response = getMouselightEndpoint("/sample/{sampleId}", subjectKey)
+                .resolveTemplate("sampleId", sampleId)
+                .request("application/json")
+                .header("username", subjectKey)
+                .get();
+        if (checkResponse(response, "getTmSample")) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return null;
     }
 
     TmSample getSampleForWorkspace(Long workspaceId, String subjectKey) {
@@ -100,6 +118,36 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         }
     }
 
+    public TmSample create(TmSample tmSample, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setSubjectKey(subjectKey);
+        query.setDomainObject(tmSample);
+        WebTarget target = getMouselightEndpoint("/sample", subjectKey);
+        Response response = target
+                .request("application/json")
+                .put(Entity.json(query));
+        if (checkResponse(response, "create: " + tmSample)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmSample.class);
+    }
+
+    public TmWorkspace create(TmWorkspace tmWorkspace, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setSubjectKey(subjectKey);
+        query.setDomainObject(tmWorkspace);
+        WebTarget target = getMouselightEndpoint("/workspace", subjectKey);
+        Response response = target
+                .request("application/json")
+                .put(Entity.json(query));
+        if (checkResponse(response, "create: " + tmWorkspace)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmWorkspace.class);
+    }
+
     public TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, String subjectKey) {
         DomainQuery query = new DomainQuery();
         query.setDomainObject(neuronMetadata);
@@ -116,6 +164,35 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         return response.readEntity(TmNeuronMetadata.class);
     }
 
+    public TmSample update(TmSample tmSample, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setDomainObject(tmSample);
+        query.setSubjectKey(subjectKey);
+        WebTarget target = getMouselightEndpoint("/sample",subjectKey);
+        Response response = target
+                .request("application/json")
+                .post(Entity.json(query));
+        if (checkResponse(response, "update: " + tmSample)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmSample.class);
+    }
+
+    public TmWorkspace update(TmWorkspace tmWorkspace, String subjectKey) {
+        DomainQuery query = new DomainQuery();
+        query.setDomainObject(tmWorkspace);
+        query.setSubjectKey(subjectKey);
+        WebTarget target = getMouselightEndpoint("/workspace", subjectKey);
+        Response response = target
+                .request("application/json")
+                .post(Entity.json(query));
+        if (checkResponse(response, "update: " + tmWorkspace)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+        return response.readEntity(TmWorkspace.class);
+    }
 
     TmNeuronMetadata update(TmNeuronMetadata neuronMetadata, String subjectKey) {
         DomainQuery query = new DomainQuery();
@@ -155,6 +232,7 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
 
     void remove(TmNeuronMetadata neuronMetadata, String subjectKey) {
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
+                .queryParam("workspaceId", neuronMetadata.getWorkspaceId())
                 .queryParam("neuronId", neuronMetadata.getId())
                 .queryParam("isLarge", neuronMetadata.isLargeNeuron())
                 .request()
@@ -166,6 +244,17 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         }
     }
 
+    public void remove(TmSample tmSample, String subjectKey) {
+        WebTarget target = getMouselightEndpoint("/sample", subjectKey)
+                .queryParam("sampleId", tmSample.getId());
+        Response response = target
+                .request("application/json")
+                .delete();
+        if (checkResponse(response, "delete: " + tmSample)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+    }
 
     public void remove(TmWorkspace tmWorkspace, String subjectKey) {
         WebTarget target = getMouselightEndpoint("/workspace", subjectKey)

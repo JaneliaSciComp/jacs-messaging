@@ -181,6 +181,7 @@ class PersistNeuronHandler implements MessageHandler {
         try {
             List<String> neuronIdList;
             String neuronIds = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.NEURONIDS);
+            String workspaceId = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.WORKSPACE);
             if (StringUtils.isNotBlank(neuronIds)) {
                  neuronIdList = Splitter.on(',').trimResults().omitEmptyStrings().splitToList(neuronIds);
             } else {
@@ -189,7 +190,7 @@ class PersistNeuronHandler implements MessageHandler {
             if (!neuronIdList.isEmpty()) {
                 boolean decision = Boolean.parseBoolean(
                         MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.DECISION));
-                domainMgr.retrieve(neuronIdList, user)
+                domainMgr.retrieve(workspaceId, neuronIdList, user)
                         .forEach(neuron -> {
                     if (decision) {
                         onSuccess.accept(updateOwnership(neuron, user), true);
@@ -217,6 +218,7 @@ class PersistNeuronHandler implements MessageHandler {
         try {
             List<String> neuronIdList;
             String neuronIds = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.NEURONIDS);
+            String workspaceId = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.WORKSPACE);
             if (StringUtils.isNotBlank(neuronIds)) {
                 neuronIdList = Splitter.on(',').trimResults()
                         .omitEmptyStrings()
@@ -225,7 +227,7 @@ class PersistNeuronHandler implements MessageHandler {
                 neuronIdList = Collections.emptyList();
             }
             if (!neuronIdList.isEmpty()) {
-                domainMgr.retrieve(neuronIdList, user)
+                domainMgr.retrieve(workspaceId,neuronIdList, user)
                         .forEach(neuron -> {
                             if (neuron.getOwnerKey() != null) {
                                 if (neuron.getOwnerKey().equals(sharedWorkspaceSystemOwner)) {

@@ -134,7 +134,7 @@ class PersistNeuronHandlerSpec extends Specification {
                 (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("true")
         ]
         def msgBody = mapper.writeValueAsBytes(user1Neuron);
-        domainMgr.retrieve(_, "user:testuser2") >> [user1Neuron]
+        domainMgr.retrieve(_, _, "user:testuser2") >> [user1Neuron]
 
         when:
         persistNeuronHandler.handleMessage(msgHeader, msgBody)
@@ -162,7 +162,7 @@ class PersistNeuronHandlerSpec extends Specification {
                 (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("false")
         ]
         def msgBody = mapper.writeValueAsBytes(user1Neuron);
-        domainMgr.retrieve(_, "user:testuser2") >> [user1Neuron]
+        domainMgr.retrieve(_, _, "user:testuser2") >> [user1Neuron]
 
         when:
         persistNeuronHandler.handleMessage(msgHeader, msgBody)
@@ -215,7 +215,7 @@ class PersistNeuronHandlerSpec extends Specification {
                 (NeuronMessageHeaders.DECISION) : LongStringHelper.asLongString("true")
         ]
         def msgBody = mapper.writeValueAsBytes(systemOwnedNeuron);
-        domainMgr.retrieve(_, "user:testuser2") >> [systemOwnedNeuron]
+        domainMgr.retrieve(_, _, "user:testuser2") >> [systemOwnedNeuron]
         domainMgr.saveMetadata(_,_) >> { args -> args[0] }
 
         when:
