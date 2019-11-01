@@ -96,3 +96,7 @@ downloadLicenses {
 task updateWrapper(type: Wrapper) {
     gradleVersion = "5.4.1"
 }
+
+task version {
+    println project.version
+}
