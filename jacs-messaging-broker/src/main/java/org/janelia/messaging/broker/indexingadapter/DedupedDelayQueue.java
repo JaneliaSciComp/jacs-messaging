@@ -7,6 +7,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * A delayed processing queue which does not accept duplicates, thereby eliminating any duplicates that occur within
  * a certain predefined delay time.
@@ -14,6 +17,8 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:rokickik@janelia.hhmi.org">Konrad Rokicki</a>
  */
 abstract class DedupedDelayQueue<T> {
+    private final static Logger LOG = LoggerFactory.getLogger(DedupedDelayQueue.class);
+
     private long workItemDelay = 5000; // Wait 5 seconds for each item by default
 
     private final BlockingQueue<DelayedItem<T>> delayed = new DelayQueue<DelayedItem<T>>();
@@ -74,7 +79,11 @@ abstract class DedupedDelayQueue<T> {
 
     void process(List<T> workItems) {
         if (!workItems.isEmpty()) {
-            processList(workItems);
+            try {
+                processList(workItems);
+            } catch (Exception e) {
+                LOG.error("Error processing {}", workItems, e);
+            }
         }
     }
 
