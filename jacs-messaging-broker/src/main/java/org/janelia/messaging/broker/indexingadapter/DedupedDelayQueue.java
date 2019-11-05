@@ -52,6 +52,15 @@ abstract class DedupedDelayQueue<T> {
         }
     }
 
+    private void retryWorkItems(final Collection<T> workItems) {
+        synchronized (this) {
+            workItems.stream()
+                    .map(workItem -> new DelayedItem<T>(workItem, workItemDelay))
+                    .forEach(postponed -> delayed.offer(postponed))
+                    ;
+        }
+    }
+
     /**
      * Returns the current size of the queue.
      * @return
@@ -73,17 +82,23 @@ abstract class DedupedDelayQueue<T> {
             delayed.drainTo(expired, maxBatchSize);
         }
         List<T> workItems = expired.stream().map(delayedItem -> delayedItem.getItem()).collect(Collectors.toList());
-        process(workItems);
-        return expired.size();
+        try {
+            process(workItems);
+            return expired.size();
+        } catch (Exception e) {
+            LOG.error("Error processing {}", workItems, e);
+            try {
+                retryWorkItems(workItems);
+            } catch (Exception re) {
+                LOG.error("Error requeueing {}", workItems, e);
+            }
+            return 0;
+        }
     }
 
     void process(List<T> workItems) {
         if (!workItems.isEmpty()) {
-            try {
-                processList(workItems);
-            } catch (Exception e) {
-                LOG.error("Error processing {}", workItems, e);
-            }
+            processList(workItems);
         }
     }
 
