@@ -1,13 +1,13 @@
 package org.janelia.messaging.broker.indexingadapter;
 
+import java.util.Map;
+import java.util.function.Function;
+
 import org.janelia.messaging.core.MessageHandler;
 import org.janelia.messaging.utils.MessagingUtils;
 import org.janelia.model.domain.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.function.Function;
 
 public class IndexingHandler implements MessageHandler {
     private static final Logger LOG = LoggerFactory.getLogger(IndexingHandler.class);
@@ -32,7 +32,7 @@ public class IndexingHandler implements MessageHandler {
         if (messageHeaders == null) {
             return; // won't be able to figure out what to do anyway
         }
-        LOG.info("Processing request {}", messageHeaders);
+        LOG.debug("Processing request {}", messageHeaders);
         IndexingMessageType action = IndexingMessageType.valueOf(MessagingUtils.getHeaderAsString(messageHeaders, IndexingMessageHeaders.TYPE));
         switch (action) {
             case ADD_ANCESTOR:
@@ -57,7 +57,7 @@ public class IndexingHandler implements MessageHandler {
         Long ancestorId =  MessagingUtils.getHeaderAsLong(messageHeaders, IndexingMessageHeaders.ANCESTOR_ID);
         // map descendants to the ancestor and only add the ancestor to its descendants after the work delay
         synchronized (docDescendantsToAdd) {
-            LOG.info("Queue add ancestor {} to {}", ancestorId, objectId);
+            LOG.debug("Queue add ancestor {} to {}", ancestorId, objectId);
             DedupedDelayQueue<Long> docDescendants;
             if (docDescendantsToAdd.get(ancestorId) == null) {
                 docDescendants = docDescendantsQueueSupplier.apply(ancestorId);
@@ -70,7 +70,7 @@ public class IndexingHandler implements MessageHandler {
 
     private void handleDeleteDoc(Map<String, Object> messageHeaders) {
         Long objectId = MessagingUtils.getHeaderAsLong(messageHeaders, IndexingMessageHeaders.OBJECT_ID);
-        LOG.info("Queue delete {}", objectId);
+        LOG.debug("Queue delete {}", objectId);
         docIdsToRemove.addWorkItem(objectId);
     }
 
@@ -78,7 +78,7 @@ public class IndexingHandler implements MessageHandler {
         Long objectId = MessagingUtils.getHeaderAsLong(messageHeaders, IndexingMessageHeaders.OBJECT_ID);
         if (objectId != null) {
             String objectClass = MessagingUtils.getHeaderAsString(messageHeaders, IndexingMessageHeaders.OBJECT_CLASS);
-            LOG.info("Queue update {}:{}", objectClass, objectId);
+            LOG.debug("Queue update {}:{}", objectClass, objectId);
             docsToIndex.addWorkItem(Reference.createFor(objectClass, objectId));
         }
     }

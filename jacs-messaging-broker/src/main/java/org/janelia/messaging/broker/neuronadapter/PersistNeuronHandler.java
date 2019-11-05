@@ -47,7 +47,7 @@ class PersistNeuronHandler implements MessageHandler {
         if (messageHeaders == null) {
             return; // won't be able to figure out what to do anyway
         }
-        LOG.info("Processing request {}", messageHeaders);
+        LOG.debug("Processing request {}", messageHeaders);
         String user = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER);
         NeuronMessageType action = NeuronMessageType.valueOf(MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.TYPE));
         TmNeuronMetadata neuronMetadata = extractNeuron(messageHeaders, messageBody);
