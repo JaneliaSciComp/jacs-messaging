@@ -9,9 +9,12 @@ import javax.ws.rs.core.Response;
 
 import org.janelia.messaging.broker.AbstractRestClient;
 import org.janelia.model.domain.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class RestIndexingService extends AbstractRestClient implements IndexingService {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RestIndexingService.class);
     private static final String INDEXING_ENDPOINT_PATH = "data/searchIndex";
 
     private final WebTarget endpointTarget;
@@ -26,7 +29,11 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
         Response response = createRequestWithCredentials(
                 endpointTarget)
                 .post(Entity.entity(docReferences, MediaType.APPLICATION_JSON_TYPE));
-        checkResponse(response, "index documents: " + docReferences);
+        if (checkResponse(response, "index documents: " + docReferences)) {
+            LOG.info("Successfully indexed {} documents", docReferences.size());
+        } else {
+            LOG.warn("Errors occurred while indexing {} documents", docReferences.size());
+        }
         response.close();
     }
 
