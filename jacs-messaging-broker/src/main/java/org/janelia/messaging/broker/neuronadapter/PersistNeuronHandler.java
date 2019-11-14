@@ -169,7 +169,7 @@ class PersistNeuronHandler implements MessageHandler {
             neuronMetadata.getReaders().add(targetUser);
             neuronMetadata.getWriters().add(targetUser);
             TmNeuronMetadata persistedNeuron = domainMgr.saveMetadata(neuronMetadata, user);
-            domainMgr.setPermissions(user, persistedNeuron, targetUser);
+           // domainMgr.setPermissions(user, persistedNeuron, targetUser);
             onSuccess.accept(persistedNeuron);
         } catch (Exception e) {
             LOG.error("Error assigning new owner {} to neuron {} by {}", msgHeaders.get(NeuronMessageHeaders.TARGET_USER), neuronMetadata, user, e);
