@@ -198,6 +198,8 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         DomainQuery query = new DomainQuery();
         query.setDomainObject(neuronMetadata);
         query.setSubjectKey(subjectKey);
+
+        LOG.info("Connecting to REST server to persist ownership change {}",neuronMetadata.getId());
         Response response = getMouselightEndpoint("/workspace/neuron", subjectKey)
                 .queryParam("subjectKey",subjectKey)
                 .request()
@@ -207,6 +209,8 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
             response.close();
             throw new WebApplicationException(response);
         }
+
+        LOG.info("Finished update of neuron's owner {}",neuronMetadata.getId());
 
         return response.readEntity(TmNeuronMetadata.class);
     }

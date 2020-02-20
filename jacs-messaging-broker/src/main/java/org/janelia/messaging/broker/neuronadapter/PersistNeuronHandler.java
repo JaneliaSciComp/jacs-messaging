@@ -83,6 +83,7 @@ class PersistNeuronHandler implements MessageHandler {
                     break;
                 case NEURON_OWNERSHIP_DECISION:
                     // process response from neuron owner
+                    LOG.info("Starting processing neuron ownership request for neuron {}", neuronMetadata.getId());
                     handleOwnershipDecision(messageHeaders, user, (neuron, decision) -> {
                         try {
                             fireApprovalMessage(neuron, user, decision, objectMapper.writeValueAsBytes(neuron));
@@ -178,6 +179,7 @@ class PersistNeuronHandler implements MessageHandler {
     }
 
     private void handleOwnershipDecision(Map<String, Object> msgHeaders, String user, BiConsumer<TmNeuronMetadata, Boolean> onSuccess) {
+
         try {
             List<String> neuronIdList;
             String neuronIds = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.NEURONIDS);
@@ -227,6 +229,7 @@ class PersistNeuronHandler implements MessageHandler {
                 neuronIdList = Collections.emptyList();
             }
             if (!neuronIdList.isEmpty()) {
+                LOG.info("Retrieving neuron for ownership change {}",neuronIds);
                 domainMgr.retrieve(workspaceId,neuronIdList, user)
                         .forEach(neuron -> {
                             if (neuron.getOwnerKey() != null) {
