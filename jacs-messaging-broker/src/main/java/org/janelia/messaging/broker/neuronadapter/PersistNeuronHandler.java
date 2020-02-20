@@ -208,6 +208,7 @@ class PersistNeuronHandler implements MessageHandler {
     private TmNeuronMetadata updateOwnership(TmNeuronMetadata neuron, String user) {
         neuron.setOwnerKey(user);
         try {
+            LOG.info("Saving ownership change {}",neuron.getId());
             return domainMgr.saveMetadata(neuron, user);
         } catch (Exception e) {
             throw new IllegalStateException(e);
@@ -227,6 +228,7 @@ class PersistNeuronHandler implements MessageHandler {
                 neuronIdList = Collections.emptyList();
             }
             if (!neuronIdList.isEmpty()) {
+                LOG.info("Retrieving neuron for ownership change {}",neuronIds);
                 domainMgr.retrieve(workspaceId,neuronIdList, user)
                         .forEach(neuron -> {
                             if (neuron.getOwnerKey() != null) {
