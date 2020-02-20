@@ -32,5 +32,4 @@ jobs:
       - run: ./gradlew --no-daemon jar test
 
       - store_test_results:
-          paths: 
-            - build/test-results/test
+          path: jacs-messaging-broker/build/test-results/test
