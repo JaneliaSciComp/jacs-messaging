@@ -206,11 +206,13 @@ class PersistNeuronHandler implements MessageHandler {
     }
 
     private TmNeuronMetadata updateOwnership(TmNeuronMetadata neuron, String user) {
+        LOG.info("Setting owner key locally {}",neuron.getId());
         neuron.setOwnerKey(user);
         try {
             LOG.info("Saving ownership change {}",neuron.getId());
             return domainMgr.saveMetadata(neuron, user);
         } catch (Exception e) {
+            LOG.info("Problem saving Neuron{}",neuron.getId());
             throw new IllegalStateException(e);
         }
     }
@@ -231,10 +233,13 @@ class PersistNeuronHandler implements MessageHandler {
                 LOG.info("Retrieving neuron for ownership change {}",neuronIds);
                 domainMgr.retrieve(workspaceId,neuronIdList, user)
                         .forEach(neuron -> {
+                            LOG.info("Starting loop for ownership change {}",neuron.getId());
                             if (neuron.getOwnerKey() != null) {
                                 if (neuron.getOwnerKey().equals(sharedWorkspaceSystemOwner)) {
+                                    LOG.info("Mouselight neuron {}",neuron.getId());
                                     onSuccess.accept(updateOwnership(neuron, user), true); // this neuron is owned by the system user so update the owner
                                 } else if (neuron.getOwnerKey().equals(user)) {
+                                    LOG.info("Already own this neuron {}",neuron.getId());
                                     onSuccess.accept(neuron, true); // this neuron is already owned by this user
                                 } else {
                                     LOG.info("Ownership request cannot be granted to {} because the neuron {} is owned by {} not by the tracers group user - {}",
@@ -242,7 +247,7 @@ class PersistNeuronHandler implements MessageHandler {
                                     onSuccess.accept(neuron, false); // the broker cannot make a decision
                                 }
                             } else {
-                                LOG.warn("Ownership cannot be changed because the neuron {} does not have the owner set", neuron.getId());
+                                LOG.info("Ownership cannot be changed because the neuron {} does not have the owner set", neuron.getId());
                                 onSuccess.accept(neuron, false); // the broker cannot make a decision
                             }
                         });

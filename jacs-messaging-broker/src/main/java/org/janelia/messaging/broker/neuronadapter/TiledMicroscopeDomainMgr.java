@@ -53,7 +53,7 @@ public class TiledMicroscopeDomainMgr {
     }
 
     public List<TmNeuronMetadata> retrieve(String workspaceId, List<String> neuronIds, String subjectKey) throws Exception {
-        log.debug("retrieve({})", neuronIds);
+        log.info("retrieve({})", neuronIds);
         List<TmNeuronMetadata> neuronMetadataList = client.getNeuronMetadata(workspaceId, neuronIds, subjectKey);
 
         return neuronMetadataList;
