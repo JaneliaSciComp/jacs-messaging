@@ -91,6 +91,34 @@ class PersistNeuronHandler implements MessageHandler {
                         }
                     });
                     break;
+                case NETWORK_DIAGNOSTICS:
+                    try {
+                        List<String> neuronIdList;
+                        Map<String, String> diagnosticInfo = new HashMap<>();
+                        String workspaceId = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.WORKSPACE);
+
+                        Long neuronId = neuronMetadata.getId();
+                        TmNeuronMetadata dbNeuron = domainMgr.retrieve(workspaceId,neuronId.toString(), user);
+
+                        Map<String, Object> msgHeaders = new HashMap<>();
+                        msgHeaders.put("Retrieved Neuron", dbNeuron==null);
+                        if (dbNeuron.getOwnerKey() != null) {
+                            if (dbNeuron.getOwnerKey().equals(sharedWorkspaceSystemOwner)) {
+                                msgHeaders.put("Mouselight System Neuron", true);
+                            } else {
+                                msgHeaders.put("Mouselight System Neuron", false);
+                            }
+                        }
+                        msgHeaders.put(NeuronMessageHeaders.TYPE, NeuronMessageType.NETWORK_DIAGNOSTICS.toString());
+                        msgHeaders.put(NeuronMessageHeaders.NEURONIDS, ImmutableList.of(neuronId.toString()));
+                        msgHeaders.put(NeuronMessageHeaders.USER, user);
+                        msgHeaders.put(NeuronMessageHeaders.WORKSPACE, neuronMetadata.getWorkspaceId().toString());
+                        LOG.info("Sending out test message for neuron ID: {} with {}", neuronId, msgHeaders);
+                        successCallback.callback(msgHeaders, objectMapper.writeValueAsBytes(neuronMetadata));
+                    } catch (Exception e) {
+                        throw new IllegalStateException(e);
+                    }
+                    break;
                 case REQUEST_NEURON_OWNERSHIP:
                     handleOwnershipRequest(messageHeaders, user, (neuron, decision) -> {
                         try {
@@ -177,34 +205,6 @@ class PersistNeuronHandler implements MessageHandler {
         }
     }
 
-    private void handleOwnershipDecision(Map<String, Object> msgHeaders, String user, BiConsumer<TmNeuronMetadata, Boolean> onSuccess) {
-        try {
-            List<String> neuronIdList;
-            String neuronIds = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.NEURONIDS);
-            String workspaceId = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.WORKSPACE);
-            if (StringUtils.isNotBlank(neuronIds)) {
-                 neuronIdList = Splitter.on(',').trimResults().omitEmptyStrings().splitToList(neuronIds);
-            } else {
-                neuronIdList = Collections.emptyList();
-            }
-            if (!neuronIdList.isEmpty()) {
-                boolean decision = Boolean.parseBoolean(
-                        MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.DECISION));
-                domainMgr.retrieve(workspaceId, neuronIdList, user)
-                        .forEach(neuron -> {
-                    if (decision) {
-                        onSuccess.accept(updateOwnership(neuron, user), true);
-                    } else {
-                        onSuccess.accept(neuron, false);
-                    }
-                });
-            }
-        } catch (Exception e) {
-            LOG.error("Error processing ownership decision {}", msgHeaders, e);
-            fireErrorMessage(msgHeaders, "Problems processing ownership decision: " + e.getMessage());
-        }
-    }
-
     private TmNeuronMetadata updateOwnership(TmNeuronMetadata neuron, String user) {
         LOG.info("Setting owner key locally {}",neuron.getId());
         neuron.setOwnerKey(user);
@@ -214,6 +214,34 @@ class PersistNeuronHandler implements MessageHandler {
         } catch (Exception e) {
             LOG.info("Problem saving Neuron{}",neuron.getId());
             throw new IllegalStateException(e);
+        }
+    }
+
+    private void handleOwnershipDecision(Map<String, Object> msgHeaders, String user, BiConsumer<TmNeuronMetadata, Boolean> onSuccess) {
+        try {
+            List<String> neuronIdList;
+            String neuronIds = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.NEURONIDS);
+            String workspaceId = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.WORKSPACE);
+            if (StringUtils.isNotBlank(neuronIds)) {
+                neuronIdList = Splitter.on(',').trimResults().omitEmptyStrings().splitToList(neuronIds);
+            } else {
+                neuronIdList = Collections.emptyList();
+            }
+            if (!neuronIdList.isEmpty()) {
+                boolean decision = Boolean.parseBoolean(
+                        MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.DECISION));
+                domainMgr.retrieve(workspaceId, neuronIdList, user)
+                        .forEach(neuron -> {
+                            if (decision) {
+                                onSuccess.accept(updateOwnership(neuron, user), true);
+                            } else {
+                                onSuccess.accept(neuron, false);
+                            }
+                        });
+            }
+        } catch (Exception e) {
+            LOG.error("Error processing ownership decision {}", msgHeaders, e);
+            fireErrorMessage(msgHeaders, "Problems processing ownership decision: " + e.getMessage());
         }
     }
 
