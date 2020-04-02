@@ -41,7 +41,16 @@ class DelayedItem<T> implements Delayed {
 		if (delayed instanceof DelayedItem) {
 			DelayedItem other = ((DelayedItem) delayed);
 			long diff = (origin+delay) - (other.origin+other.delay);
-			return ((diff == 0) ? 0 : ((diff < 0) ? -1 : 1));
+			if (diff==0) {
+				if (item.equals(other.getItem())) {
+					return 0;
+				} else {
+					return -1; // need something to indicate they are different.
+				}
+			} else if (diff<0) {
+				return -1;
+			}
+			return 1;
 		}
 
 		long d = (getDelay(TimeUnit.MILLISECONDS) - delayed.getDelay(TimeUnit.MILLISECONDS));
