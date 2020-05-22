@@ -44,7 +44,7 @@ public class MessageConnectionImpl implements MessageConnection {
     }
 
     public void openConnection(String host, String username, String password, int threadPoolSize) {
-        LOG.info("Try to open connection to {} as {}", host, username);
+        LOG.info("Try to open connection to {} as {} with threadPoolSize {}", host, username, threadPoolSize);
         factory.setHost(host);
         factory.setUsername(username);
         factory.setPassword(password);

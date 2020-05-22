@@ -47,7 +47,9 @@ class PersistNeuronHandler implements MessageHandler {
         if (messageHeaders == null) {
             return; // won't be able to figure out what to do anyway
         }
-        LOG.debug("Processing request {}", messageHeaders);
+        LOG.info("Processing request for user {}, workspace {}, neurons {}", MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER),
+                MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.WORKSPACE),
+                MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.NEURONIDS));
         String user = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER);
         NeuronMessageType action = NeuronMessageType.valueOf(MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.TYPE));
         TmNeuronMetadata neuronMetadata = extractNeuron(messageHeaders, messageBody);
@@ -129,6 +131,9 @@ class PersistNeuronHandler implements MessageHandler {
                     });
                     break;
             }
+        } else {
+            LOG.info("Problem processing request for user", MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER));
+            fireErrorMessage(messageHeaders, "Error unmarshalling neuron. Likely to get sync errors");
         }
     }
 

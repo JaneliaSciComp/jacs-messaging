@@ -4,8 +4,11 @@ import java.util.function.Consumer;
 
 import org.janelia.messaging.core.impl.MessageConnectionImpl;
 import org.janelia.messaging.core.impl.RetriedMessageConnectionImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConnectionManager {
+    private static final Logger log = LoggerFactory.getLogger(ConnectionManager.class);
     private static ConnectionManager instance = new ConnectionManager();
 
     public static ConnectionManager getInstance() {
@@ -32,6 +35,10 @@ public class ConnectionManager {
     }
 
     public MessageConnection getConnection(ConnectionParameters connectionParameters, Consumer<Throwable> connectionErrorHandler) {
+        log.info("Creating connection with max retries {}, pauseBetweenRetries {}, and consumer threads {}",
+                connectionParameters.maxRetries,
+                connectionParameters.pauseBetweenRetriesInMillis,
+                connectionParameters.consumerThreads);
         MessageConnection messageConnection = new RetriedMessageConnectionImpl(getConnection(),
                 connectionParameters.maxRetries,
                 connectionParameters.pauseBetweenRetriesInMillis);
