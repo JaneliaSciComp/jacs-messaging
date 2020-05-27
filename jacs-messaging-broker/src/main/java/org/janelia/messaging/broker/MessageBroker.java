@@ -112,7 +112,7 @@ public class MessageBroker {
                                 .setPassword(mb.messagingPassword)
                                 .setMaxRetries(config.getIntegerPropertyValue("connection.maxRetries", 1))
                                 .setPauseBetweenRetriesInMillis(config.getLongPropertyValue("connection.pauseBetweenRetriesInMillis", 100L))
-                                .setConsumerThreads(config.getIntegerPropertyValue("connection.consumerThreads", 20)),
+                                .setConsumerThreads(config.getIntegerPropertyValue("connection.consumerThreads", 1)),
                                 (error) -> {
                                     errorHolder.set(error);
                                 }
