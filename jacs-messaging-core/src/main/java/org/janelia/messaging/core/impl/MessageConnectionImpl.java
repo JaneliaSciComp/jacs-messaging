@@ -106,13 +106,13 @@ public class MessageConnectionImpl implements MessageConnection {
             throw new IllegalStateException("Connection must be opened before publishing a message to " + exchange + " with " + routingKey);
         }
         try {
-            LOG.debug("Send message {} to exchange {} ({}) with routingKey {}", headers, exchange, channel.getConnection(), routingKey);
+            LOG.debug("Send message {} to exchange {} ({}) with routingKey \"{}\"", headers, exchange, channel.getConnection(), routingKey);
             channel.basicPublish(exchange, routingKey,
                     new AMQP.BasicProperties.Builder()
                             .headers(headers)
                             .build(), body);
         } catch (Exception e) {
-            LOG.error("Error publishing message {} to the exchange {} with routingKey {}", headers, exchange, routingKey, e);
+            LOG.error("Error publishing message {} to the exchange {} with routingKey \"{}\"", headers, exchange, routingKey, e);
         }
     }
 
