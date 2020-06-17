@@ -99,7 +99,6 @@ class PersistNeuronHandlerSpec extends Specification {
         persistNeuronHandler.handleMessage(msgHeader, msgBody)
 
         then:
-        0 * domainMgr.save(_, _, _)
         0 * domainMgr.saveMetadata(_, _)
         0 * replySuccessSender.sendMessage(_, _)
         0 * replyErrorSender.sendMessage(_, _)
@@ -188,7 +187,6 @@ class PersistNeuronHandlerSpec extends Specification {
         ]
         def msgBody =  mapper.writeValueAsBytes(user1Neuron);
         domainMgr.saveMetadata(_,_) >> { args -> args[0] }
-        domainMgr.setPermissions(_,_,_) >> { user1Neuron }
 
         when:
         persistNeuronHandler.handleMessage(msgHeader, msgBody)

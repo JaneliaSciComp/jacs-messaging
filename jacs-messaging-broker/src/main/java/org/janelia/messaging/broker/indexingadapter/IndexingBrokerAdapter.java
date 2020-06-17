@@ -80,18 +80,18 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
             docsToIndex.setProcessingCompleteCallback(workItems -> {
                 Map<String, Object> messageHeaders = new LinkedHashMap<>();
                 messageHeaders.put(IndexingMessageHeaders.TYPE, "INDEX_DOCS");
-                messageHeaders.put(IndexingMessageHeaders.OBJECT_REFS,
-                        workItems.stream().map(Reference::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+                replySuccessSender.sendMessage(
+                        messageHeaders,
+                        workItems.stream().map(Reference::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("").getBytes()
                 );
-                replySuccessSender.sendMessage(messageHeaders, null);
             });
             docIdsToRemove.setProcessingCompleteCallback(workItems -> {
                 Map<String, Object> messageHeaders = new LinkedHashMap<>();
                 messageHeaders.put(IndexingMessageHeaders.TYPE, "DELETE_DOCS");
-                messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
-                        workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
+                replySuccessSender.sendMessage(
+                        messageHeaders,
+                        workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("").getBytes()
                 );
-                replySuccessSender.sendMessage(messageHeaders, null);
             });
         } else {
             LOG.info("Forwarding of the indexing requests has not been configured - success response exchange is empty");
@@ -123,11 +123,11 @@ public class IndexingBrokerAdapter extends BrokerAdapter {
                         if (replySuccessSender != null) {
                             Map<String, Object> messageHeaders = new LinkedHashMap<>();
                             messageHeaders.put(IndexingMessageHeaders.TYPE, "ADD_ANCESTOR");
-                            messageHeaders.put(IndexingMessageHeaders.OBJECT_IDS,
-                                    workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("")
-                            );
                             messageHeaders.put(IndexingMessageHeaders.ANCESTOR_ID, ancestorId);
-                            replySuccessSender.sendMessage(messageHeaders, null);
+                            replySuccessSender.sendMessage(
+                                    messageHeaders,
+                                    workItems.stream().map(Object::toString).reduce((o1, o2) -> o1 + "," + o2).orElse("").getBytes()
+                            );
                         }
                     }
                 });

@@ -10,8 +10,6 @@ package org.janelia.messaging.broker.indexingadapter;
 public class IndexingMessageHeaders {
     public static final String OBJECT_CLASS = "objectClass";
     public static final String OBJECT_ID = "objectId";
-    public static final String OBJECT_IDS = "objectIds";
-    public static final String OBJECT_REFS = "objectRefs";
     public static final String ANCESTOR_ID = "ancestorId";
     public static final String TYPE = "msgType";
 }

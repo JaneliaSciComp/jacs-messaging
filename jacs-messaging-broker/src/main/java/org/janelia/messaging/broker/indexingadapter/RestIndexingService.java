@@ -26,34 +26,39 @@ class RestIndexingService extends AbstractRestClient implements IndexingService 
 
     @Override
     public void indexDocReferences(List<Reference> docReferences) {
-        Response response = createRequestWithCredentials(
-                endpointTarget)
+        Response response = createRequestWithCredentials(endpointTarget)
                 .post(Entity.entity(docReferences, MediaType.APPLICATION_JSON_TYPE));
-        if (checkResponse(response, "index documents: " + docReferences)) {
-            LOG.info("Successfully indexed {} documents", docReferences.size());
+        if (isErrorResponse(endpointTarget.getUri(), response)) {
+            LOG.error("Errors occurred while indexing {} documents", docReferences.size());
         } else {
-            LOG.warn("Errors occurred while indexing {} documents", docReferences.size());
+            LOG.info("Successfully indexed {} documents", docReferences.size());
         }
         response.close();
     }
 
     @Override
     public void remmoveDocIds(List<Long> docIds) {
-        Response response = createRequestWithCredentials(
-                endpointTarget
-                        .path("docsToRemove"))
+        WebTarget target = endpointTarget.path("docsToRemove");
+        Response response = createRequestWithCredentials(target)
                 .post(Entity.entity(docIds, MediaType.APPLICATION_JSON_TYPE));
-        checkResponse(response, "removed documents: " + docIds);
+        if (isErrorResponse(target.getUri(), response)) {
+            LOG.error("Errors occurred while removing {} documents", docIds.size());
+        } else {
+            LOG.info("Successfully removed {}", docIds);
+        }
         response.close();
     }
 
     @Override
     public void addAncestorToDocs(Long ancestorId, List<Long> docIds) {
-        Response response = createRequestWithCredentials(
-                endpointTarget
-                        .path(ancestorId.toString()).path("descendants"))
+        WebTarget target = endpointTarget.path(ancestorId.toString()).path("descendants");
+        Response response = createRequestWithCredentials(target)
                 .put(Entity.entity(docIds, MediaType.APPLICATION_JSON_TYPE));
-        checkResponse(response, "add ancestor " + ancestorId + " to " + docIds);
+        if (isErrorResponse(target.getUri(), response)) {
+            LOG.error("Errors occurred while adding ancestor {} to {}", ancestorId, docIds);
+        } else {
+            LOG.info("Successfully added ancestor {} to {}", ancestorId, docIds);
+        }
         response.close();
     }
 

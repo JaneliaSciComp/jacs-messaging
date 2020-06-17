@@ -182,8 +182,10 @@ class PersistNeuronHandler implements MessageHandler {
         }
     }
 
-    private void handleSaveNeuron(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, String user,
-                                          Consumer<TmNeuronMetadata> onSuccess) {
+    private void handleSaveNeuron(Map<String, Object> msgHeaders,
+                                  TmNeuronMetadata neuronMetadata,
+                                  String user,
+                                  Consumer<TmNeuronMetadata> onSuccess) {
         try {
             TmNeuronMetadata persistedNeuron = domainMgr.saveMetadata(neuronMetadata, user);
             LOG.info("Persisted neuron {}", persistedNeuron);
@@ -194,7 +196,9 @@ class PersistNeuronHandler implements MessageHandler {
         }
     }
 
-    private void handleReassignNeuron(Map<String, Object> msgHeaders, TmNeuronMetadata neuronMetadata, String user,
+    private void handleReassignNeuron(Map<String, Object> msgHeaders,
+                                      TmNeuronMetadata neuronMetadata,
+                                      String user,
                                       Consumer<TmNeuronMetadata> onSuccess) {
         try {
             String targetUser = MessagingUtils.getHeaderAsString(msgHeaders, NeuronMessageHeaders.TARGET_USER);
@@ -202,7 +206,6 @@ class PersistNeuronHandler implements MessageHandler {
             neuronMetadata.getReaders().add(targetUser);
             neuronMetadata.getWriters().add(targetUser);
             TmNeuronMetadata persistedNeuron = domainMgr.saveMetadata(neuronMetadata, user);
-           // domainMgr.setPermissions(user, persistedNeuron, targetUser);
             onSuccess.accept(persistedNeuron);
         } catch (Exception e) {
             LOG.error("Error assigning new owner {} to neuron {} by {}", msgHeaders.get(NeuronMessageHeaders.TARGET_USER), neuronMetadata, user, e);

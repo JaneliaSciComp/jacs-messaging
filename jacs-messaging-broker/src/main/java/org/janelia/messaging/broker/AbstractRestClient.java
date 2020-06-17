@@ -1,5 +1,7 @@
 package org.janelia.messaging.broker;
 
+import java.net.URI;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
@@ -79,11 +81,11 @@ public class AbstractRestClient {
         }
     }
 
-    protected boolean checkResponse(Response response, String failureError) {
+    protected boolean isErrorResponse(URI endpointURI, Response response) {
         int responseStatus = response.getStatus();
         Response.Status status = Response.Status.fromStatusCode(response.getStatus());
-        if (responseStatus < 200 || responseStatus >= 300) {
-            LOG.error("Server responded with error code: {} {} -> {}", response.getStatus(), status, failureError);
+        if (responseStatus >= 400) {
+            LOG.error("Endpoint {} responded with error code: {} ({})", endpointURI, response.getStatus(), status);
             return true;
         }
         return false;

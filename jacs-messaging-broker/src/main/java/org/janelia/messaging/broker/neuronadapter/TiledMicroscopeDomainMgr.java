@@ -1,15 +1,10 @@
 package org.janelia.messaging.broker.neuronadapter;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.janelia.model.domain.Reference;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
-import org.janelia.model.domain.tiledMicroscope.TmProtobufExchanger;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
-import org.janelia.model.domain.tiledMicroscope.TmWorkspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,7 +25,7 @@ public class TiledMicroscopeDomainMgr {
         return client.getSampleForWorkspace(workspaceId, subjectKey);
     }
 
-    public TmNeuronMetadata saveMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
+    TmNeuronMetadata saveMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) {
         log.debug("save({})", neuronMetadata);
         TmNeuronMetadata savedMetadata;
         if (neuronMetadata.getId() == null) {
@@ -41,25 +36,14 @@ public class TiledMicroscopeDomainMgr {
         return savedMetadata;
     }
 
-    public List<TmNeuronMetadata> saveMetadata(List<TmNeuronMetadata> neuronList, String subjectKey) throws Exception {
-        log.debug("save({})", neuronList);
-        for (TmNeuronMetadata tmNeuronMetadata : neuronList) {
-            if (tmNeuronMetadata.getId() == null) {
-                throw new IllegalArgumentException("Bulk neuron creation is currently unsupported");
-            }
-        }
-        List<TmNeuronMetadata> updatedMetadata = client.updateNeurons(neuronList, subjectKey);
-        return updatedMetadata;
-    }
-
-    public List<TmNeuronMetadata> retrieve(String workspaceId, List<String> neuronIds, String subjectKey) throws Exception {
+    List<TmNeuronMetadata> retrieve(String workspaceId, List<String> neuronIds, String subjectKey) {
         log.info("retrieve({})", neuronIds);
         List<TmNeuronMetadata> neuronMetadataList = client.getNeuronMetadata(workspaceId, neuronIds, subjectKey);
 
         return neuronMetadataList;
     }
 
-    public TmNeuronMetadata retrieve(String workspaceId, String neuronId, String subjectKey) throws Exception {
+    TmNeuronMetadata retrieve(String workspaceId, String neuronId, String subjectKey) {
         List<String> neuronIds = new ArrayList<String>();
         neuronIds.add(neuronId);
         log.debug("retrieve({})", neuronIds);
@@ -70,34 +54,9 @@ public class TiledMicroscopeDomainMgr {
         return null;
     }
 
-    public TmWorkspace save(TmWorkspace workspace, String subjectKey) throws Exception {
-        log.debug("save({})", workspace.getId());
-        workspace = client.save(workspace, subjectKey);
-        return workspace;
-    }
-
-    public void remove(TmWorkspace workspace, String subjectKey) throws Exception {
-        log.debug("remove({})", workspace);
-        client.remove(workspace, subjectKey);
-    }
-
-    public TmNeuronMetadata save(TmNeuronMetadata neuronMetadata, String subjectKey) throws Exception {
-        log.debug("save({})", neuronMetadata);
-        TmNeuronMetadata savedMetadata;
-        if (neuronMetadata.getId() == null) {
-            savedMetadata = client.create(neuronMetadata, subjectKey);
-        } else {
-            savedMetadata = client.update(neuronMetadata, subjectKey);
-        }
-        return savedMetadata;
-    }
-
-    public void remove(TmNeuronMetadata tmNeuron, String subjectKey) throws Exception {
+    void remove(TmNeuronMetadata tmNeuron, String subjectKey) throws Exception {
         log.debug("remove({})", tmNeuron);
         client.remove(tmNeuron, subjectKey);
     }
 
-    public TmNeuronMetadata setPermissions(String subjectKey, TmNeuronMetadata neuron, String newOwner) throws Exception {
-        return client.setPermissions(subjectKey, neuron, newOwner);
-    }
 }
