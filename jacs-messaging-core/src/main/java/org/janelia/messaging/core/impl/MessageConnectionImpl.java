@@ -112,7 +112,7 @@ public class MessageConnectionImpl implements MessageConnection {
                             .headers(headers)
                             .build(), body);
         } catch (Exception e) {
-            LOG.error("Error publishing message {} to the exchange {} with routingKey {}", headers, exchange, routingKey);
+            LOG.error("Error publishing message {} to the exchange {} with routingKey {}", headers, exchange, routingKey, e);
         }
     }
 

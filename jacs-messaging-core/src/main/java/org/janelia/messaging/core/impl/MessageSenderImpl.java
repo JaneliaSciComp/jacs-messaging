@@ -52,7 +52,7 @@ public class MessageSenderImpl implements MessageSender {
         try {
             messageConnection.publish(exchange, routingKey, messageHeaders, messageBody);
         } catch (Exception e) {
-            LOG.error("Error publishing message {} to the exchange {} with routingKey {}", messageHeaders, exchange, routingKey);
+            LOG.error("Error publishing message {} to the exchange {} with routingKey {}", messageHeaders, exchange, routingKey, e);
         }
     }
 
