@@ -25,6 +25,13 @@ public class TiledMicroscopeDomainMgr {
         return client.getSampleForWorkspace(workspaceId, subjectKey);
     }
 
+    public void saveOperationLog(Long workspaceId, Long neuronId,
+                                      String operationType, String timestamp, String subjectKey ) {
+        log.info("operationlog({},{},{},{},{},{})", subjectKey,timestamp,workspaceId, neuronId,operationType);
+        client.createOperationLog(workspaceId,neuronId,
+                operationType,timestamp,subjectKey);
+    }
+
     TmNeuronMetadata saveMetadata(TmNeuronMetadata neuronMetadata, String subjectKey) {
         log.debug("save({})", neuronMetadata);
         TmNeuronMetadata savedMetadata;

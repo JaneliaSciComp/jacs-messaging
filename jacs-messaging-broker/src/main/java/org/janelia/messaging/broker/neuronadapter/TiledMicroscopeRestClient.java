@@ -87,6 +87,24 @@ class TiledMicroscopeRestClient extends AbstractRestClient {
         }
     }
 
+    void createOperationLog(Long workspaceId, Long neuronId,
+                            String operationType, String timestamp, String subjectKey ) {
+        LOG.info("operation log - {},{},{},{},{}", workspaceId, neuronId, operationType, timestamp, subjectKey);
+        WebTarget target =  getMouselightEndpoint("/operation/log", subjectKey)
+                .queryParam("username", subjectKey)
+                .queryParam("workspaceId", workspaceId)
+                .queryParam("neuronId", neuronId)
+                .queryParam("operationType", operationType)
+                .queryParam("timestamp", timestamp);
+        Response response = target
+                .request("application/json")
+                .get();
+        if (isErrorResponse(target.getUri(), response)) {
+            response.close();
+            throw new WebApplicationException(response);
+        }
+    }
+
     TmNeuronMetadata create(TmNeuronMetadata neuronMetadata, String subjectKey) {
         DomainQuery query = new DomainQuery();
         query.setDomainObject(neuronMetadata);

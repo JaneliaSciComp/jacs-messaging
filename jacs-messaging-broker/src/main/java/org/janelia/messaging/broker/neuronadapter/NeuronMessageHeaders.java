@@ -16,4 +16,6 @@ public class NeuronMessageHeaders {
     public static final String METADATA = "metadata";
     public static final String DECISION = "decision";
     public static final String DESCRIPTION = "description";
+    public static final String OPERATION = "operation";
+    public static final String TIMESTAMP = "timestamp";
 }

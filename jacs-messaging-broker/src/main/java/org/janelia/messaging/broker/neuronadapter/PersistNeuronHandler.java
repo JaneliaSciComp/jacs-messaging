@@ -51,9 +51,18 @@ class PersistNeuronHandler implements MessageHandler {
                 MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.WORKSPACE),
                 MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.NEURONIDS));
         String user = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER);
+        String operation = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.OPERATION);
+        String operationTimestamp = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.TIMESTAMP);
         NeuronMessageType action = NeuronMessageType.valueOf(MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.TYPE));
         TmNeuronMetadata neuronMetadata = extractNeuron(messageHeaders, messageBody);
         if (neuronMetadata != null) {
+            try {
+                domainMgr.saveOperationLog(neuronMetadata.getWorkspaceId(), neuronMetadata.getId(),
+                        operation,operationTimestamp, user);
+            } catch (Exception e) {
+                // log error but don't abort.. it's not the end of the world if logging is down for some reason.
+                LOG.error ("Problem with logging tracing operations.",e);
+            }
             switch (action) {
                 case NEURON_DELETE:
                     handleDeleteNeuron(messageHeaders, neuronMetadata, user, neuron -> successCallback.callback(messageHeaders, messageBody));
