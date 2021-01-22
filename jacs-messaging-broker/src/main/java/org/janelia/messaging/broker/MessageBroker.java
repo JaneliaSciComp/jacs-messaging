@@ -13,6 +13,7 @@ import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import org.janelia.messaging.broker.agentadapter.AgentBrokerAdapterFactory;
 import org.janelia.messaging.broker.indexingadapter.IndexingBrokerAdapterFactory;
 import org.janelia.messaging.broker.neuronadapter.NeuronBrokerAdapterFactory;
 import org.janelia.messaging.config.ApplicationConfig;
@@ -95,6 +96,8 @@ public class MessageBroker {
                     factories.add(new IndexingBrokerAdapterFactory());
                 } else if (brokers[i].equals("Neuron")) {
                     factories.add(new NeuronBrokerAdapterFactory());
+                } else if (brokers[i].equals("Agent")) {
+                    factories.add(new AgentBrokerAdapterFactory());
                 }
             }
         }
