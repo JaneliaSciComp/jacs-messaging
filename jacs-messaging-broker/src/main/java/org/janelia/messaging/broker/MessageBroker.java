@@ -86,7 +86,7 @@ public class MessageBroker {
                 .fromFile(mb.configFile)
                 .fromMap(mb.appDynamicConfig)
                 .build();
-        String brokerList = config.getStringPropertyValue("brokers", "Neuron,Indexing");
+        String brokerList = config.getStringPropertyValue("brokers", "Neuron,Indexing,Agent");
         List<BrokerAdapterFactory> factories = new ArrayList<>();
         if (brokerList.trim().length()>0) {
             String[] brokers = brokerList.split(",");
