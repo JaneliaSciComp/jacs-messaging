@@ -28,12 +28,21 @@ public class AgentsBrokerAdapter extends BrokerAdapter {
                 adapterArgs.getErrorResponseExchange(),
                 adapterArgs.getErrorResponseRouting());
 
+        MessageSender forwardWorkstationSender = new MessageSenderImpl(messageConnection);
+        forwardWorkstationSender.connectTo(
+                adapterArgs.getForwardResponseExchange(),
+                adapterArgs.getForwardResponseRouting());
+
+
         MessageHandler.HandlerCallback successCallback = ((messageHeaders, messageBody) -> replySuccessSender.sendMessage(messageHeaders, messageBody));
         MessageHandler.HandlerCallback errorCallback = successCallback.andThen(((messageHeaders, messageBody) -> replyErrorSender.sendMessage(messageHeaders, messageBody)));
+        MessageHandler.HandlerCallback forwardCallback = successCallback.andThen(((messageHeaders, messageBody) -> forwardWorkstationSender.sendMessage(messageHeaders, messageBody)));
 
         return new AgentHandler(
+                new AgentDomainMgr(persistenceServer, adapterArgs.getAdapterConfig("persistenceApiKey")),
                 successCallback,
-                errorCallback
+                errorCallback,
+                forwardCallback
         );
     }
 

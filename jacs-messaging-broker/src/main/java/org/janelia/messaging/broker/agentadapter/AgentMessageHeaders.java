@@ -10,4 +10,5 @@ package org.janelia.messaging.broker.agentadapter;
 public class AgentMessageHeaders {
     public static final String TYPE = "message_type";
     public static final String MESSAGE_ID = "message_id";
+    public static final String DESCRIPTION = "description";
 }

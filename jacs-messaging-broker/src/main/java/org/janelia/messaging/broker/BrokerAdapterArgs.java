@@ -39,6 +39,14 @@ public class BrokerAdapterArgs {
         return getAdapterConfigOrDefault("successResponseRouting", "");
     }
 
+    public String getForwardResponseExchange() {
+        return getAdapterConfig("forwardResponseQueue");
+    }
+
+    public String getForwardResponseRouting() {
+        return getAdapterConfigOrDefault("forwardResponseRouting", "");
+    }
+
     public String getErrorResponseExchange() {
         return getAdapterConfig("errorResponseQueue");
     }

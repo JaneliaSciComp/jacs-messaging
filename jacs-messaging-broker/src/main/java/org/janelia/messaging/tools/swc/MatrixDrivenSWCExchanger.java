@@ -13,6 +13,7 @@ import Jama.Matrix;
 import org.janelia.messaging.broker.neuronadapter.TiledMicroscopeDomainMgr;
 import org.janelia.messaging.tools.geom.BoundingBox3d;
 import org.janelia.messaging.tools.geom.Vec3;
+import org.janelia.messaging.tools.persistence.DomainMgr;
 import org.janelia.model.domain.tiledMicroscope.TmSample;
 
 /**
@@ -63,8 +64,13 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
     }
 
     public void init(String persistenceServer, String user) throws Exception {
-        // fetch the sample and extract the origin and scale attributes
         TiledMicroscopeDomainMgr domainMgr = new TiledMicroscopeDomainMgr(persistenceServer, null);
+        init(domainMgr, user);
+    }
+
+    public void init(DomainMgr domainMgr, String user) throws Exception {
+        // fetch the sample and extract the origin and scale attributes
+
         TmSample sample = domainMgr.getSampleByWorkspaceId(workspaceId, user);
 
         // if no origin or scale attributes, stop (old sample)
