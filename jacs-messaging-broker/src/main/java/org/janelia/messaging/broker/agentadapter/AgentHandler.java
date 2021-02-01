@@ -177,7 +177,7 @@ class AgentHandler implements MessageHandler {
 
                 // link the nodeIds to locations to speed up reconstruction
                 List<Float[]> locations = ( List<Float[]>)payload.get("locations");
-                Map<String,Float[]> nodeLocMap = new HashMap<>();
+                Map<String,Object> nodeLocMap = new HashMap<>();
                 for (int i=0; i<nodeIds.size(); i++) {
                     String nodeId = nodeIds.get(i);
                     nodeLocMap.put(nodeId, locations.get(i));
@@ -202,18 +202,20 @@ class AgentHandler implements MessageHandler {
                 converter.setSWCExchanger(matrixCalcs);
 
                 int neuroncount = 1;
+
                 for (String root: rootNodes) {
                     Map<Integer, TmGeoAnnotation> annotations = new HashMap<>();
 
                     TmNeuronMetadata neuron = new TmNeuronMetadata();
                     neuron.setWorkspaceRef(Reference.createFor(TmWorkspace.class, workspaceId));
                     neuron.setName("Neuron" + neuroncount++);
-                    neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
 
+                    neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
                     // start at the root and recursively generate annotations
-                    if (neuron!=null && neuron.getId()!=null)
+                    if (neuron!=null && neuron.getId()!=null) {
                         addChildNodes(root, null, nodeLocMap, edges,
-                                idMappings, converter, neuron);
+                                idMappings, null, neuron);
+                    }
 
                     fireNeuronForwardMessage(neuron);
                 }
@@ -229,15 +231,15 @@ class AgentHandler implements MessageHandler {
         }
     }
 
-    private TmGeoAnnotation addChildNodes(String id, String parentId, Map<String, Float[]> nodeLocMap,
+    private TmGeoAnnotation addChildNodes(String id, String parentId, Map<String, Object> nodeLocMap,
                                Multimap<String, String> edges, Map<String,String> idMappings,
                                SWCDataConverter converter,
                                TmNeuronMetadata neuron) {
-        Float[] loc = nodeLocMap.get(id);
+        List loc = (List)nodeLocMap.get(id);
         Long internalId = generator.generateId();
         idMappings.put(internalId.toString(), id);
         double[] internalPoint = converter.internalFromExternal(
-                new double[]{loc[0], loc[1], loc[2],});
+                new double[]{(double)loc.get(0), (double)loc.get(1), (double)loc.get(2)});
         Date now = new Date();
         // generate new id and store mapping
         TmGeoAnnotation newAnnotation = new TmGeoAnnotation(
