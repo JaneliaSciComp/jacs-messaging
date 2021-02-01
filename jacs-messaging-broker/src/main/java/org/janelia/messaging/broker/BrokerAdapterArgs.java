@@ -40,11 +40,13 @@ public class BrokerAdapterArgs {
     }
 
     public String getForwardResponseExchange() {
-        return getAdapterConfig("forwardResponseQueue");
+        return "ModelUpdates";
+        //return getAdapterConfig("forwardResponseQueue");
     }
 
     public String getForwardResponseRouting() {
-        return getAdapterConfigOrDefault("forwardResponseRouting", "");
+        return "";
+        //return getAdapterConfigOrDefault("forwardResponseRouting", "");
     }
 
     public String getErrorResponseExchange() {
