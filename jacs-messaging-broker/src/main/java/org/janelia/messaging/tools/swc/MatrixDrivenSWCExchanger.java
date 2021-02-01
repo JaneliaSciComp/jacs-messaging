@@ -25,8 +25,6 @@ import org.janelia.model.domain.tiledMicroscope.TmSample;
 public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
     private static final int EXPECTED_ARRAY_SIZE = 3;
 
-    static BoundingBox3d boundingBox;
-
     private Matrix micronToVoxMatrix;
     private Matrix voxToMicronMatrix;
     private Long workspaceId;
@@ -34,33 +32,6 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
 
     public MatrixDrivenSWCExchanger(Long workspaceId) {
         this.workspaceId = workspaceId;
-    }
-
-    private int[] calculateVolumeSize(TmSample sample) throws Exception {
-        // replace this if running on mac
-        File topFolderParam = new File(sample.getLargeVolumeOctreeFilepath().replaceAll("nrs", "Volumes"));
-
-        int octreeDepth = (int) sample.getNumImageryLevels().longValue();
-        int zoomFactor = (int) Math.pow(2, octreeDepth - 1);
-
-        // Deduce other parameters from first image file contents
-        File tiff = new File(topFolderParam, "default.0.tif");
-        SeekableStream s = new FileSeekableStream(tiff);
-        ImageDecoder decoder = ImageCodec.createImageDecoder("tiff", s, null);
-        // Z dimension is related to number of tiff pages
-        int sz = decoder.getNumPages();
-
-        // Get X/Y dimensions from first image
-        RenderedImageAdapter ria = new RenderedImageAdapter(decoder.decodeAsRenderedImage(0));
-        int sx = ria.getWidth();
-        int sy = ria.getHeight();
-
-        // Full volume could be much larger than this downsampled tile
-        int[] volumeSize = new int[3];
-        volumeSize[2] = zoomFactor * sz;
-        volumeSize[0] = zoomFactor * sx;
-        volumeSize[1] = zoomFactor * sy;
-        return volumeSize;
     }
 
     public void init(String persistenceServer, String user) throws Exception {
@@ -77,8 +48,6 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
         if (sample == null || sample.getOrigin() == null || sample.getScaling() == null)
             return;
 
-        // calculate volumeSize
-        int[] volumeSize = calculateVolumeSize(sample);
         // get origin and scale from Sample
         int[] origin = new int[3];
         for (int i = 0; i < 3; i++) {
@@ -100,13 +69,6 @@ public class MatrixDrivenSWCExchanger implements ImportExportSWCExchanger {
         for (int i = 0; i < origin.length; i++) {
             origin[i] = (int) (origin[i] / (1000 * scale[i])); // nanometers to voxels
         }
-
-        // calculate bounding box using scale, origin, and volume
-        Vec3 b0 = new Vec3(0, 0, 0);
-        Vec3 b1 = new Vec3(volumeSize[0], volumeSize[1], volumeSize[2]);
-        boundingBox = new BoundingBox3d();
-        boundingBox.setMin(b0);
-        boundingBox.setMax(b1);
 
         micronToVoxMatrix = MatrixUtilities.buildMicronToVox(scale, origin);
         voxToMicronMatrix = MatrixUtilities.buildVoxToMicron(scale, origin);
