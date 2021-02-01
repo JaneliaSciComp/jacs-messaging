@@ -69,7 +69,7 @@ class AgentTrackingClient extends AbstractRestClient {
     }
 
     TmSample getSampleForWorkspace(Long workspaceId, String subjectKey) {
-        LOG.info("Workspace request on {}", workspaceId);
+        LOG.info("Workspace request on {} for {}", workspaceId,subjectKey);
         WebTarget workspaceEndpoint = getMouselightEndpoint("/workspace/{workspaceId}", subjectKey)
                 .resolveTemplate("workspaceId", workspaceId);
         Response workspaceResponse = workspaceEndpoint

@@ -63,7 +63,7 @@ class AgentHandler implements MessageHandler {
         try {
             switch (action) {
                 case CREATE_WORKSPACE:
-                    Map<String,String> agentRequest = extractJsonPayload(messageHeaders, messageBody);
+                    Map<String,Object> agentRequest = extractJsonPayload(messageHeaders, messageBody);
                     String messageId = MessagingUtils.getHeaderAsString(messageHeaders, NeuronMessageHeaders.USER);
 
                     handleWorkspaceCreate(messageHeaders, agentRequest,
@@ -128,11 +128,11 @@ class AgentHandler implements MessageHandler {
         return null;
     }
 
-    private Map<String,String> extractJsonPayload (Map<String, Object> messageHeaders,
+    private Map<String,Object> extractJsonPayload (Map<String, Object> messageHeaders,
                                                    byte[] messageBody) {
         try {
-            TypeReference<HashMap<String, String>> typeRef
-                    = new TypeReference<HashMap<String, String>>() {};
+            TypeReference<HashMap<String, Object>> typeRef
+                    = new TypeReference<HashMap<String, Object>>() {};
             return objectMapper.readValue(messageBody, typeRef);
 
         } catch (Exception e) {
@@ -148,38 +148,34 @@ class AgentHandler implements MessageHandler {
     }
 
     private void handlePredictionsCreate (Map<String, Object> msgHeaders,
-                                        Map<String, String> payload,
+                                        Map<String, Object> payload,
                                         Consumer<Map<String,Object>> processor) {
         // process list of nodes into a map first
         // pick random node and trace all connected components
         // repeat until no more nodes left
         try {
-            String messageIdString = payload.get("message_id");
-            String workspaceIdStr = payload.get("workspace_id");
+            String messageIdString = (String)payload.get("message_id");
+            String workspaceIdStr = (String)payload.get("workspace_id");
             Long workspaceId = Long.parseLong(workspaceIdStr);
-            String nodes = payload.get("nodes");
-            if (nodes == null || workspaceId == null|| messageIdString == null) {
+            List<String> nodeIds = (List<String>)payload.get("nodes");
+            if (nodeIds == null || workspaceId == null|| messageIdString == null) {
                 fireErrorMessage(msgHeaders,
                         "required items missing for init predictions");
             } else {
-                List<String> nodeIds = objectMapper.readValue(payload.get("nodes"),
-                        new TypeReference<List<String>>() {});
                 Map<String, String> idMappings = new HashMap<>();
 
                 // create a multimap to store all the child branches
                 Multimap<String, String> edges = ArrayListMultimap.create();
-                List<String> connections = objectMapper.readValue(payload.get("edges"),
-                        new TypeReference<List<String>>() {});
-                for (String connection: connections) {
-                    JsonNode jsonNode = objectMapper.readTree(connection);
-                    String parent = jsonNode.fieldNames().next();
-                    String child = jsonNode.get(parent).asText();
+                List<HashMap<String,String>> connections = (List<HashMap<String,String>>)payload.get("edges");
+
+                for (HashMap<String,String> connection: connections) {
+                    String parent = connection.keySet().iterator().next();
+                    String child = connection.get(parent);
                     edges.put(parent, child);
                 }
 
                 // link the nodeIds to locations to speed up reconstruction
-                List<Float[]> locations = objectMapper.readValue(payload.get("locations"),
-                        new TypeReference<HashMap<String, String>>() {});
+                List<Float[]> locations = ( List<Float[]>)payload.get("locations");
                 Map<String,Float[]> nodeLocMap = new HashMap<>();
                 for (int i=0; i<nodeIds.size(); i++) {
                     String nodeId = nodeIds.get(i);
@@ -259,11 +255,11 @@ class AgentHandler implements MessageHandler {
     }
 
     private void handleWorkspaceCreate (Map<String, Object> msgHeaders,
-                                        Map<String, String> payload,
+                                        Map<String, Object> payload,
                                         Consumer<Map<String,Object>> processor) {
         try {
-            String sampleIdString = payload.get("sample");
-            String workspaceName = payload.get("name");
+            String sampleIdString = (String)payload.get("sample");
+            String workspaceName = (String)payload.get("name");
             if (sampleIdString == null || workspaceName == null) {
                 fireErrorMessage(msgHeaders,
                         "required items missing for workspace creation");
