@@ -20,6 +20,7 @@ import org.janelia.messaging.tools.swc.MatrixDrivenSWCExchanger;
 import org.janelia.messaging.tools.swc.SWCDataConverter;
 import org.janelia.messaging.utils.MessagingUtils;
 import org.janelia.model.access.domain.TimebasedIdentifierGenerator;
+import org.janelia.model.domain.Reference;
 import org.janelia.model.domain.tiledMicroscope.TmAgentMetadata;
 import org.janelia.model.domain.tiledMicroscope.TmGeoAnnotation;
 import org.janelia.model.domain.tiledMicroscope.TmNeuronMetadata;
@@ -205,6 +206,7 @@ class AgentHandler implements MessageHandler {
                     Map<Integer, TmGeoAnnotation> annotations = new HashMap<>();
 
                     TmNeuronMetadata neuron = new TmNeuronMetadata();
+                    neuron.setWorkspaceRef(Reference.createFor(TmWorkspace.class, workspaceId));
                     neuron.setName("Neuron" + neuroncount++);
                     neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
 
