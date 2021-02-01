@@ -36,7 +36,7 @@ class AgentHandler implements MessageHandler {
     private final HandlerCallback forwardCallback;
     private final ObjectMapper objectMapper;
     // for now hard code this but extend it for multiple agents
-    private final String agentSubject = "user:mlagent";
+    private final String agentSubject = "group:mouselight";
     private final TimebasedIdentifierGenerator generator =
             new TimebasedIdentifierGenerator(0);
 
