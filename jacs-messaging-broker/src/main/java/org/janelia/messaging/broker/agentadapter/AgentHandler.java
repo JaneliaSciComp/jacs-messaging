@@ -214,7 +214,7 @@ class AgentHandler implements MessageHandler {
                     // start at the root and recursively generate annotations
                     if (neuron!=null && neuron.getId()!=null) {
                         addChildNodes(root, null, nodeLocMap, edges,
-                                idMappings, null, neuron);
+                                idMappings, converter, neuron);
                     }
 
                     fireNeuronForwardMessage(neuron);
