@@ -213,7 +213,7 @@ class AgentHandler implements MessageHandler {
                     neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
                     // start at the root and recursively generate annotations
                     if (neuron!=null && neuron.getId()!=null) {
-                        addChildNodes(root, null, nodeLocMap, edges,
+                        addChildNodes(root, neuron.getId().toString(), nodeLocMap, edges,
                                 idMappings, converter, neuron);
                     }
 
