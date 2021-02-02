@@ -45,7 +45,7 @@ public class BrokerAdapterArgs {
     }
 
     public String getForwardResponseRouting() {
-        return "";
+        return "brokerqueue";
         //return getAdapterConfigOrDefault("forwardResponseRouting", "");
     }
 

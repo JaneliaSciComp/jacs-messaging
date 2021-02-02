@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,6 +25,11 @@ public class AgentDomainMgr implements DomainMgr {
 
     public TmWorkspace createWorkspaceForSample(Long sampleId, String workspaceName, String subjectKey) throws Exception {
         return client.createWorkspaceForSample(sampleId, workspaceName,subjectKey);
+    }
+
+    public List<TmNeuronMetadata> getNeurons(String workspaceId, String neuronId, String subjectKey) throws Exception {
+        return client.getNeuronMetadata(workspaceId,
+                Arrays.asList(new String[]{neuronId}), subjectKey);
     }
 
     public TmAgentMetadata getAgentMapping(Long workspaceId, String subjectKey) throws Exception {

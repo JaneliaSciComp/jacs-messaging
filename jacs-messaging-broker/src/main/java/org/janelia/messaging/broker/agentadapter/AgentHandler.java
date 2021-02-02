@@ -79,16 +79,7 @@ class AgentHandler implements MessageHandler {
                     break;
                 case INIT:
                     agentRequest = extractJsonPayload(messageHeaders, messageBody);
-                    handlePredictionsCreate(messageHeaders, agentRequest,
-                            (payload) -> {
-                                try {
-                                    fireSuccessMessage(AgentMessageType.SUCCESS,
-                                            "", objectMapper.writeValueAsBytes(payload));
-                                } catch (Exception e) {
-                                    throw new IllegalStateException(e);
-                                }
-                            });
-                    break;
+                    handlePredictionsCreate(messageHeaders, agentRequest);
                 case PROCESS_DIFF:
                     TmNeuronMetadata newNeuron = extractNeuron(messageHeaders, messageBody);
                     if (newNeuron==null || newNeuron.getId()==null)
@@ -149,8 +140,7 @@ class AgentHandler implements MessageHandler {
     }
 
     private void handlePredictionsCreate (Map<String, Object> msgHeaders,
-                                        Map<String, Object> payload,
-                                        Consumer<Map<String,Object>> processor) {
+                                        Map<String, Object> payload) {
         // process list of nodes into a map first
         // pick random node and trace all connected components
         // repeat until no more nodes left
