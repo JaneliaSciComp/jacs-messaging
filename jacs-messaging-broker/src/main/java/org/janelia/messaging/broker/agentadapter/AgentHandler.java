@@ -295,7 +295,7 @@ class AgentHandler implements MessageHandler {
         List<Long> neuronIds = new ArrayList<Long>();
         neuronIds.add(neuron.getId());
         Map<String, Object> updateHeaders = new HashMap<String, Object>();
-        updateHeaders.put(NeuronMessageHeaders.TYPE, NeuronMessageType.NEURON_SAVE_NEURONDATA);
+        updateHeaders.put(NeuronMessageHeaders.TYPE, NeuronMessageType.NEURON_SAVE_NEURONDATA.toString());
         updateHeaders.put(NeuronMessageHeaders.USER, agentSubject);
         updateHeaders.put(NeuronMessageHeaders.WORKSPACE, neuron.getWorkspaceId().toString());
         updateHeaders.put(NeuronMessageHeaders.NEURONIDS, neuronIds.toString());
