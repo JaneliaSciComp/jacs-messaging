@@ -80,6 +80,7 @@ class AgentHandler implements MessageHandler {
                 case INIT:
                     agentRequest = extractJsonPayload(messageHeaders, messageBody);
                     handlePredictionsCreate(messageHeaders, agentRequest);
+                    break;
                 case PROCESS_DIFF:
                     TmNeuronMetadata newNeuron = extractNeuron(messageHeaders, messageBody);
                     if (newNeuron==null || newNeuron.getId()==null)
@@ -293,13 +294,12 @@ class AgentHandler implements MessageHandler {
     private void fireNeuronForwardMessage(TmNeuronMetadata neuron) throws Exception {
         List<Long> neuronIds = new ArrayList<Long>();
         neuronIds.add(neuron.getId());
-        Map<String, Object> msgHeaders = new HashMap<>();
         Map<String, Object> updateHeaders = new HashMap<String, Object>();
         updateHeaders.put(NeuronMessageHeaders.TYPE, NeuronMessageType.NEURON_SAVE_NEURONDATA);
         updateHeaders.put(NeuronMessageHeaders.USER, agentSubject);
         updateHeaders.put(NeuronMessageHeaders.WORKSPACE, neuron.getWorkspaceId().toString());
         updateHeaders.put(NeuronMessageHeaders.NEURONIDS, neuronIds.toString());
-        forwardCallback.callback(msgHeaders, objectMapper.writeValueAsBytes(neuron));
+        forwardCallback.callback(updateHeaders, objectMapper.writeValueAsBytes(neuron));
     }
 
     private void fireErrorMessage(Map<String, Object> msgHeaders, String errorMessage) {
