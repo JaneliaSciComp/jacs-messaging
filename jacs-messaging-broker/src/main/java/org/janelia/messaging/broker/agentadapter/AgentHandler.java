@@ -200,9 +200,13 @@ class AgentHandler implements MessageHandler {
                     TmNeuronMetadata neuron = new TmNeuronMetadata();
                     neuron.setWorkspaceRef(Reference.createFor(TmWorkspace.class, workspaceId));
                     neuron.setName("Neuron" + neuroncount++);
-
-                    neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
                     neuron.setOwnerKey(agentSubject);
+                    Set<String> readersWriter = new HashSet<>();
+                    readersWriter.add(agentSubject);
+                    neuron.setReaders(readersWriter);
+                    neuron.setWriters(readersWriter);
+                    neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
+
                     // start at the root and recursively generate annotations
                     if (neuron!=null && neuron.getId()!=null) {
                         addChildNodes(root, neuron.getId(), nodeLocMap, edges,
