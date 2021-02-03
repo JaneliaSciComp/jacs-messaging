@@ -202,6 +202,7 @@ class AgentHandler implements MessageHandler {
                     neuron.setName("Neuron" + neuroncount++);
 
                     neuron = agentDomainMgr.createNeuron(neuron, agentSubject);
+                    neuron.setOwnerKey(agentSubject);
                     // start at the root and recursively generate annotations
                     if (neuron!=null && neuron.getId()!=null) {
                         addChildNodes(root, neuron.getId(), nodeLocMap, edges,
@@ -299,6 +300,8 @@ class AgentHandler implements MessageHandler {
         updateHeaders.put(NeuronMessageHeaders.USER, agentSubject);
         updateHeaders.put(NeuronMessageHeaders.WORKSPACE, neuron.getWorkspaceId().toString());
         updateHeaders.put(NeuronMessageHeaders.NEURONIDS, neuronIds.toString());
+        updateHeaders.put(NeuronMessageHeaders.OPERATION, "AGENT_CREATION");
+        updateHeaders.put(NeuronMessageHeaders.TIMESTAMP, new Date());
         forwardCallback.callback(updateHeaders, objectMapper.writeValueAsBytes(neuron));
     }
 
