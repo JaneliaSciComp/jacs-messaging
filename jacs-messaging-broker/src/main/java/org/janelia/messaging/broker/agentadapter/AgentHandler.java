@@ -210,7 +210,7 @@ class AgentHandler implements MessageHandler {
                     // start at the root and recursively generate annotations
                     if (neuron!=null && neuron.getId()!=null) {
                         addChildNodes(root, neuron.getId(), nodeLocMap, edges,
-                                idMappings, converter, neuron);
+                                idMappings, converter, neuron, true);
                     }
 
                     fireNeuronForwardMessage(neuron);
@@ -230,7 +230,8 @@ class AgentHandler implements MessageHandler {
     private TmGeoAnnotation addChildNodes(String id, Long parentId, Map<String, Object> nodeLocMap,
                                Multimap<String, String> edges, Map<String,String> idMappings,
                                SWCDataConverter converter,
-                               TmNeuronMetadata neuron) {
+                               TmNeuronMetadata neuron,
+                                          boolean rootNode) {
         List loc = (List)nodeLocMap.get(id);
         Long internalId = generator.generateId();
         idMappings.put(internalId.toString(), id);
@@ -244,9 +245,11 @@ class AgentHandler implements MessageHandler {
                 now, now
         );
         neuron.addGeometricAnnotation(newAnnotation);
+        if (rootNode)
+            neuron.addRootAnnotation(newAnnotation);
         for (String childId: edges.get(id)) {
             TmGeoAnnotation childAnn = addChildNodes(childId, internalId, nodeLocMap,
-                    edges, idMappings, converter, neuron);
+                    edges, idMappings, converter, neuron, false);
             if (childAnn!=null) {
                 newAnnotation.addChild(childAnn);
             }
