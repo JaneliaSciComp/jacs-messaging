@@ -57,8 +57,8 @@ class PersistNeuronHandler implements MessageHandler {
         TmNeuronMetadata neuronMetadata = extractNeuron(messageHeaders, messageBody);
         if (neuronMetadata != null) {
             try {
-                domainMgr.saveOperationLog(neuronMetadata.getWorkspaceId(), neuronMetadata.getId(),
-                        operation,operationTimestamp, user);
+                //domainMgr.saveOperationLog(neuronMetadata.getWorkspaceId(), neuronMetadata.getId(),
+                //        operation,operationTimestamp, user);
             } catch (Exception e) {
                 // log error but don't abort.. it's not the end of the world if logging is down for some reason.
                 LOG.error ("Problem with logging tracing operations.",e);
