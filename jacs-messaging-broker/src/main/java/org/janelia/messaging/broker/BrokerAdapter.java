@@ -2,14 +2,13 @@ package org.janelia.messaging.broker;
 
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.commons.lang3.StringUtils;
 import org.janelia.messaging.core.GenericMessage;
 import org.janelia.messaging.core.MessageConnection;
@@ -44,7 +43,7 @@ public abstract class BrokerAdapter {
     public abstract MessageHandler getMessageHandler(MessageConnection messageConnection);
 
     public List<ScheduledTask> getScheduledTasks(MessageConnection messageConnection) {
-        return Arrays.asList(getBackupQueueTask(messageConnection));
+        return Collections.singletonList(getBackupQueueTask(messageConnection));
     }
 
     protected ScheduledTask getBackupQueueTask(MessageConnection messageConnection) {

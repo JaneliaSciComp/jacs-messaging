@@ -64,7 +64,7 @@ public class TiledMicroscopeDomainMgr implements DomainMgr {
     }
 
     void remove(TmNeuronMetadata tmNeuron, String subjectKey) throws Exception {
-        log.debug("remove({})", tmNeuron);
+        log.info("remove({})", tmNeuron);
         client.remove(tmNeuron, subjectKey);
     }
 
