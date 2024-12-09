@@ -2,6 +2,10 @@
 
 [![Java CI with Maven](https://github.com/JaneliaSciComp/jacs-messaging/actions/workflows/gradle.yml/badge.svg)](https://github.com/JaneliaSciComp/jacs-messaging/actions/workflows/gradle.yml)
 
+This module contains common classes for supporting clients performing asynchronous messaging in java using rabbitMQ, a popular and lightweight messaging framework.  
+
+It also contains server components for the shared workspace feature in LVV/Horta, allowing realtime broadcasting of updates to all tracers in the same workspace.  Finally, there are some utilities for downloading message backup history and parsing the history to recover neuron information.
+
 ## Build 
 
 Build the library jar (jacs-messaging-<vers>.jar):
@@ -32,12 +36,6 @@ Stop Neuron Broker on remote server:
 
 ## Publish to maven repo
 `gradle -PmavenRepoUser=YourUserName -PmavenRepoPassword=YourPassword publish`
-
-## Summary
-
-This module contains common classes for supporting clients performing asynchronous messaging in java using rabbitMQ, a popular and lightweight messaging framework.  
-
-It also contains server components for the shared workspace feature in LVV/Horta, allowing realtime broadcasting of updates to all tracers in the same workspace.  Finally, there are some utilities for downloading message backup history and parsing the history to recover neuron information.
 
 ## License 
 
