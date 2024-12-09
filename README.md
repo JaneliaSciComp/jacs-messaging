@@ -1,6 +1,6 @@
 # JACS Messaging
 
-[![CircleCI](https://circleci.com/gh/JaneliaSciComp/jacs-messaging.svg?style=svg)](https://circleci.com/gh/JaneliaSciComp/jacs-messaging)
+[![Java CI with Maven](https://github.com/JaneliaSciComp/jacs-messaging/actions/workflows/gradle.yml/badge.svg)](https://github.com/JaneliaSciComp/jacs-messaging/actions/workflows/gradle.yml)
 
 ## Build 
 
