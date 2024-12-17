@@ -140,6 +140,7 @@ class AgentHandler implements MessageHandler {
 
     }
 
+    @SuppressWarnings("unchecked")
     private void handlePredictionsCreate (Map<String, Object> msgHeaders,
                                         Map<String, Object> payload) {
         // process list of nodes into a map first
@@ -149,7 +150,7 @@ class AgentHandler implements MessageHandler {
             String messageIdString = (String)payload.get("message_id");
             String workspaceIdStr = (String)payload.get("workspace_id");
             Long workspaceId = Long.parseLong(workspaceIdStr);
-            List<String> nodeIds = (List<String>)payload.get("nodes");
+            List<String> nodeIds = (List<String>) payload.get("nodes");
             if (nodeIds == null || workspaceId == null|| messageIdString == null) {
                 fireErrorMessage(msgHeaders,
                         "required items missing for init predictions");

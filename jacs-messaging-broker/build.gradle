@@ -1,9 +1,9 @@
 buildscript {
     repositories {
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'org.hidetake:gradle-ssh-plugin:2.10.1'
+        classpath 'org.hidetake:gradle-ssh-plugin:2.2.0'
     }
 }
 

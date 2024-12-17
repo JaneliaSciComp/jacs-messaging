@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.hierynomus.license" version "0.15.0"
+    id('com.github.hierynomus.license') version '0.16.1'
 }
 
 allprojects {
@@ -46,7 +46,7 @@ subprojects {
             }
         }
 
-        task sourceJar(type: Jar) {
+        tasks.register('sourceJar', Jar) {
             from sourceSets.main.allJava
             archiveClassifier = 'sources'
         }
@@ -93,10 +93,10 @@ downloadLicenses {
     dependencyConfiguration = 'compile'
 }
 
-task updateWrapper(type: Wrapper) {
-    gradleVersion = "5.5.1"
+tasks.register('updateWrapper', Wrapper) {
+    gradleVersion = "8.11.1"
 }
 
-task version {
+tasks.register('version') {
     println project.version
 }
