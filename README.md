@@ -1,6 +1,7 @@
 # JACS Messaging
 
 [![Java CI with Maven](https://github.com/JaneliaSciComp/jacs-messaging/actions/workflows/gradle.yml/badge.svg)](https://github.com/JaneliaSciComp/jacs-messaging/actions/workflows/gradle.yml)
+[![DOI](https://zenodo.org/badge/113470371.svg)](https://doi.org/10.5281/zenodo.14610033)
 
 This module contains common classes for supporting clients performing asynchronous messaging in java using rabbitMQ, a popular and lightweight messaging framework.  
 
